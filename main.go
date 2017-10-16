@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http/httptest"
 	"strings"
+	"fmt"
 )
 
 type (
@@ -23,9 +24,35 @@ func writeJSON(res http.ResponseWriter, data JSON) {
 	json.NewEncoder(res).Encode(data)
 }
 
-func processMessage(session Session, message string) (string, error){
-	// Some session logic should go here
+func processMessage(session Session, message string) (string, error) {
 	message = strings.ToLower(message)
+	requestOrCreate, requestOrCreateFound := session["requestOrCreate"]
+	if !requestOrCreateFound {
+		if strings.Contains(message, "create") || (strings.Contains(message, "offer") && !strings.Contains(message, "offered")){
+			session["requestOrCreate"] = "create"
+			return "You've chosen to create a carpool. Are you going to the GUC, or are you leaving campus?", nil
+		} else if strings.Contains(message, "request") || strings.Contains(message, "find") || strings.Contains(message, "join"){
+			session["requestOrCreate"] = "request"
+			return "You've chosen to request a carpool. Are you going to the GUC, or are you leaving campus?", nil
+		} else {
+			return "I'm sorry, but you didn't answer my question! Are you offering a ride? Or are you requesting One?", nil
+		}
+	}else{
+		if requestOrCreate == "create" {
+			return createCarpoolChat(session, message)
+		} else if requestOrCreate == "request" {
+			return requestCarpoolChat(session, message)
+		} else {
+			return "", fmt.Errorf("Whoops! An error occured in your session. Can you please log out and log back in again?")
+		}
+	}
+}
+
+func createCarpoolChat(session Session, message string) (string, error) {
+	return message, nil
+}
+
+func requestCarpoolChat(session Session, message string) (string, error) {
 	return message, nil
 }
 
@@ -36,7 +63,7 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
-func serveAndLog(handler http.HandlerFunc) http.HandlerFunc{
+func serveAndLog(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		res := httptest.NewRecorder()
 		handler(res, req)
@@ -52,10 +79,18 @@ func serveAndLog(handler http.HandlerFunc) http.HandlerFunc{
 
 func startSession(res http.ResponseWriter, req *http.Request) {
 	gucID := req.Header.Get("Authorization")
+	if gucID == "" {
+		res.WriteHeader(http.StatusForbidden)
+		writeJSON(res, JSON {
+			"message": "You don't seem to be logged in. You need to login with your GUC email and password.",
+		})
+		return
+	}
+
 	sessions[gucID] = Session{}
 	writeJSON(res, JSON {
 		"gucID": gucID,
-		"message": "Welocme to GUC Carpool! Would you like to get a ride to university? Or are you offering one?",
+		"message": "Welocme to GUC Carpool! Would you like to get a ride? Or are you offering one?",
 	})
 }
 
@@ -121,5 +156,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 }
 
 func serve(res http.ResponseWriter, req *http.Request) {
-	res.Write([]byte("hello world"))
+	writeJSON(res, JSON {
+		"message": "Please use the route '/welcome' to log in.",
+	})
 }
