@@ -50,7 +50,19 @@ func chatBot(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		res.WriteHeader(http.StatusMethodNotAllowed)
 		writeJSON(res, JSON {
-			"message": "I'm sorry, but you didn't send and data with that GET request. I can only listen to POST requests on this route.",
+			"message": "I'm sorry, but you didn't send any proper data with that " + req.Method + " request. I can only listen to POST requests on this route.",
+		})
+		return
+	}
+
+	// Some logic for the session should go here
+
+	data := JSON{}
+	err := json.NewDecoder(req.Body).Decode(&data)
+	if err != nil {
+		res.WriteHeader(http.StatusBadRequest)
+		writeJSON(res, JSON {
+			"message": "I could not understand what you said because it wasn't written in a JSON format!",
 		})
 		return
 	}
