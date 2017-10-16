@@ -6,11 +6,16 @@ import (
 	"encoding/json"
 	"log"
 	"net/http/httptest"
+	"strings"
 )
 
 type (
 	JSON map[string]interface{}
-	//Session map[string]interface{}
+	Session map[string]interface{}
+)
+
+var (
+	sessions = map[string]Session{}
 )
 
 func writeJSON(res http.ResponseWriter, data JSON) {
@@ -18,10 +23,16 @@ func writeJSON(res http.ResponseWriter, data JSON) {
 	json.NewEncoder(res).Encode(data)
 }
 
+func processMessage(session Session, message string) (string, error){
+	// Some session logic should go here
+	message = strings.ToLower(message)
+	return message, nil
+}
+
 func main() {
 	http.HandleFunc("/", serveAndLog(serve))
 	http.HandleFunc("/welcome", serveAndLog(startSession))
-	http.HandleFunc("/chat", serveAndLog(chatBot))
+	http.HandleFunc("/chat", serveAndLog(handleChat))
 	http.ListenAndServe(":8080", nil)
 }
 
@@ -40,13 +51,15 @@ func serveAndLog(handler http.HandlerFunc) http.HandlerFunc{
 }
 
 func startSession(res http.ResponseWriter, req *http.Request) {
-	// Ask about uuid
+	gucID := req.Header.Get("Authorization")
+	sessions[gucID] = Session{}
 	writeJSON(res, JSON {
-		"message": "Welocme to GUC Carpool!",
+		"gucID": gucID,
+		"message": "Welocme to GUC Carpool! Would you like to get a ride to university? Or are you offering one?",
 	})
 }
 
-func chatBot(res http.ResponseWriter, req *http.Request) {
+func handleChat(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		res.WriteHeader(http.StatusMethodNotAllowed)
 		writeJSON(res, JSON {
@@ -55,7 +68,23 @@ func chatBot(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Some logic for the session should go here
+	gucID := req.Header.Get("Authorization")
+	if gucID == "" {
+		res.WriteHeader(http.StatusUnauthorized)
+		writeJSON(res, JSON {
+			"message": "I'm sorry, but you don't seem to be logged in. Please log in and try again.",
+		})
+		return
+	}
+
+	session, sessionFound := sessions[gucID]
+	if !sessionFound {
+		res.WriteHeader(http.StatusUnauthorized)
+		writeJSON(res, JSON {
+			"message": "I'm sorry, but your session has expired. Please log in and try again.",
+		})
+		return
+	}
 
 	data := JSON{}
 	err := json.NewDecoder(req.Body).Decode(&data)
@@ -66,17 +95,29 @@ func chatBot(res http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-	// Closed in order to stop resource leak.
 	defer req.Body.Close()
 
-	message, received := data["message"]
+	_, received := data["message"]
 	if !received {
 		res.WriteHeader(http.StatusBadRequest)
 		writeJSON(res, JSON {
 			"message": "I did not receive a message. Are you sure you sent me something?",
 		})
+		return
 	}
-	log.Println(message)
+
+	finalResponse, err := processMessage(session, data["message"].(string))
+	if err != nil {
+		res.WriteHeader(http.StatusUnprocessableEntity)
+		writeJSON(res, JSON {
+			"message": string(err.Error()),
+		})
+		return
+	}
+
+	writeJSON(res, JSON {
+		"message": finalResponse,
+	})
 }
 
 func serve(res http.ResponseWriter, req *http.Request) {
