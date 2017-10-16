@@ -66,6 +66,17 @@ func chatBot(res http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
+	// Closed in order to stop resource leak.
+	defer req.Body.Close()
+
+	message, received := data["message"]
+	if !received {
+		res.WriteHeader(http.StatusBadRequest)
+		writeJSON(res, JSON {
+			"message": "I did not receive a message. Are you sure you sent me something?",
+		})
+	}
+	log.Println(message)
 }
 
 func serve(res http.ResponseWriter, req *http.Request) {
