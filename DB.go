@@ -1,4 +1,4 @@
-package DB
+package main
 
 import (
 	"fmt"
@@ -32,6 +32,7 @@ type CarpoolRequest struct {
 	Latitude           float64
 	PostID             uint64 `bson:"_id,omitempty"`
 	Time               time.Time
+	StartTime          time.Time // time parsing done outside database for multiple format
 	CurrentPassengers  []string
 	PossiblePassengers []string
 	Name               string
@@ -40,26 +41,37 @@ type CarpoolRequest struct {
 }
 
 //NewCarpool create new carpool request return the newly created request
-func NewCarpool(GUCID string, Longitude float64, Latitude float64, Name string, FromGUC bool, AvailableSeats int) CarpoolRequest {
+func NewCarpool(GUCID string, Longitude float64, Latitude float64, Name string, FromGUC bool, AvailableSeats int, StartTime string) (req CarpoolRequest, err error) {
 	mySlice1 := make([]string, 0)
-	return CarpoolRequest{
+	stTime, err := time.Parse("Jan 2, 2006 at 3:04pm (EET)", StartTime)
+	if err != nil {
+		return req, err
+	}
+	req = CarpoolRequest{
 		GUCID:              GUCID,
 		Longitude:          Longitude,
 		Latitude:           Latitude,
 		Time:               time.Now(),
+		StartTime:          stTime,
 		CurrentPassengers:  mySlice1,
 		PossiblePassengers: mySlice1,
 		Name:               Name,
 		FromGUC:            FromGUC,
 		AvailableSeats:     AvailableSeats,
 	}
+	return req, nil
 }
 
 func main() {
 
 	// test Insert Data
-	newC := NewCarpool("34-111", 31.25, 32.56, "mohamed", true, 5)
-	err := InsertDB(&newC)
+	//should check if start time is a valid time format first
+	newC, err := NewCarpool("34-111", 31.25, 32.56, "mohamed", true, 5, "Jan 2, 2006 at 3:04pm (EET)") //newC will have default values
+	if err != nil {
+		fmt.Println(err.Error())
+		fmt.Println(newC)
+	}
+	err = InsertDB(&newC)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
