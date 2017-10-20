@@ -1,4 +1,4 @@
-package main
+package DB
 
 import (
 	"fmt"
@@ -62,8 +62,7 @@ func NewCarpool(GUCID string, Longitude float64, Latitude float64, Name string, 
 	return req, nil
 }
 
-func main() {
-
+/*func main() {
 	// test Insert Data
 	//should check if start time is a valid time format first
 	newC, err := NewCarpool("34-111", 31.25, 32.56, "mohamed", true, 5, "Jan 2, 2006 at 3:04pm (EET)") //newC will have default values
@@ -88,8 +87,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-
-}
+}*/
 
 func updateDB(postid, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int) error {
 	session, err := initDBSession()

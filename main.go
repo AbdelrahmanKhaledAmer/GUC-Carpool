@@ -8,6 +8,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"fmt"
+	"regexp"
+	"time"
+	//"./DB"
 )
 
 type (
@@ -19,23 +22,39 @@ var (
 	sessions = map[string]Session{}
 )
 
+func getDetails(session Session) string {
+	str := ""
+	
+	if session["fromGUC"].(bool) {
+		str += "You're leaving the GUC, and going to the location with "
+	} else {
+		str += "You're coming to the GUC, from the location with "
+	}
+
+	str += "latitude " + session["latitude"].(string) + " and longitude " + session["longitude"].(string) + "."
+
+	str += "You want your ride to take place around " + (session["time"].(time.Time)).Format("Jan 2, 2006 at 3:04pm (EET)") + "."
+
+	return str
+}
+
 func writeJSON(res http.ResponseWriter, data JSON) {
 	res.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(res).Encode(data)
 }
 
 func processMessage(session Session, message string) (string, error) {
-	message = strings.ToLower(message)
 	requestOrCreate, requestOrCreateFound := session["requestOrCreate"]
+	comparable := strings.ToLower(message)
 	if !requestOrCreateFound {
-		if strings.Contains(message, "create") || (strings.Contains(message, "offer") && !strings.Contains(message, "offered")){
+		if strings.Contains(comparable, "create") || (strings.Contains(comparable, "offer") && !strings.Contains(comparable, "offered")){
 			session["requestOrCreate"] = "create"
 			return "You've chosen to create a carpool. Are you going to the GUC, or are you leaving campus?", nil
-		} else if strings.Contains(message, "request") || strings.Contains(message, "find") || strings.Contains(message, "join"){
+		} else if strings.Contains(comparable, "request") || strings.Contains(comparable, "find") || strings.Contains(comparable, "join"){
 			session["requestOrCreate"] = "request"
 			return "You've chosen to request a carpool. Are you going to the GUC, or are you leaving campus?", nil
 		} else {
-			return "I'm sorry, but you didn't answer my question! Are you offering a ride? Or are you requesting One?", nil
+			return "", fmt.Errorf("I'm sorry, but you didn't answer my question! Are you offering a ride? Or are you requesting One?")
 		}
 	}else{
 		if requestOrCreate == "create" {
@@ -53,7 +72,54 @@ func createCarpoolChat(session Session, message string) (string, error) {
 }
 
 func requestCarpoolChat(session Session, message string) (string, error) {
-	return message, nil
+	fromGUC, fromGUCFound := session["fromGUC"]
+	comparable := strings.ToLower(message)
+	if !fromGUCFound {
+		if strings.Contains(comparable, "going to") {
+			session["fromGUC"] = false
+			return "You've chosen to find a carpool going to the GUC! Where would you like to be picked up from?", nil
+		} else if strings.Contains(comparable, "leaving") {
+			session["fromGUC"] = true
+			return "You chose to leave the campus. Where would you like to go?", nil
+		} else {
+			return "", fmt.Errorf("I'm sorry, but you didn't answer my question! Are you going to the GUC? Or are you leaving campus?")
+		}
+	}
+
+	_, latitudeFound := session["latitude"]
+	_, longitudeFound := session["longitude"]
+	if (!latitudeFound || !longitudeFound) && fromGUCFound {
+		if strings.Contains(comparable, "latitude") && strings.Contains(comparable, "longitude") {
+			exp := regexp.MustCompile(`[0-9]+[\.]?[0-9]*`)
+			session["latitude"] = exp.FindAllString(message,-1)[0]
+			session["longitude"] = exp.FindAllString(message,-1)[1]
+			return "You chose the location with the latitude " + session["latitude"].(string) + ", and the longitude " + session["longitude"].(string) + ". What time would you like to your ride to be?", nil
+		} else {
+			var ret string
+			if fromGUC.(bool) {
+				ret = "Where would you like to go?"
+			} else {
+				ret = "Where would you like to be picked up from?"
+			}
+			return "",fmt.Errorf("I'm sorry, but you didn't answer my question! " + ret)
+		}
+	}
+
+	_, timeFound := session["time"]
+	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
+		stTime, err := time.Parse("Jan 2, 2006 at 3:04pm (EET)", message)
+		if err != nil {
+			return "",fmt.Errorf("An error occured when parsing the time. Can you please tell me again when you want your ride to be?")
+		}
+		session["time"] = stTime
+	}
+
+	if timeFound && fromGUCFound && latitudeFound && longitudeFound {
+		details := getDetails(session)
+		return "Your request is complete! Here are the details: " + details + " Please wait while we find a suitable Carpool for you.", nil
+	}
+
+	return "", fmt.Errorf("Whoops! An error occured in your session. Can you please log out and log back in again?")
 }
 
 func main() {
@@ -78,6 +144,14 @@ func serveAndLog(handler http.HandlerFunc) http.HandlerFunc {
 }
 
 func startSession(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		res.WriteHeader(http.StatusMethodNotAllowed)
+		writeJSON(res, JSON {
+			"message": "I'm sorry, but you didn't send any proper data with that " + req.Method + " request. I can only listen to GET requests on this route.",
+		})
+		return
+	}
+
 	gucID := req.Header.Get("Authorization")
 	if gucID == "" {
 		res.WriteHeader(http.StatusForbidden)
