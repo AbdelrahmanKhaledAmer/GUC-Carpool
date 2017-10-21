@@ -114,6 +114,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		session["time"] = stTime
 	}
 
+	_, timeFound = session["time"]
 	if timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		details := getDetails(session)
 		return "Your request is complete! Here are the details: " + details + " Please wait while we find a suitable Carpool for you.", nil
