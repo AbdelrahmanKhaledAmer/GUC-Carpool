@@ -14,6 +14,7 @@ you should go get these packages first
 "gopkg.in/mgo.v2"
 "github.com/night-codes/mgo-ai"
 "gopkg.in/mgo.v2/bson"
+
 to test code in main func change the package to main and put it in separate folder
 */
 
@@ -71,12 +72,14 @@ func NewCarpool(GUCID string, Longitude float64, Latitude float64, Name string, 
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+
 	//test Query code
 	rs, err := QueryAll()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	fmt.Println(rs)
+
 	//test update code
 	err = updateDB(1, 31, 32, true, 4)
 	if err != nil {
