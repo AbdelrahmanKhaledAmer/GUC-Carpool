@@ -10,12 +10,10 @@ import (
 )
 
 /*
-
 you should go get these packages first
 "gopkg.in/mgo.v2"
 "github.com/night-codes/mgo-ai"
 "gopkg.in/mgo.v2/bson"
-
 
 to test code in main func change the package to main and put it in separate folder
 */

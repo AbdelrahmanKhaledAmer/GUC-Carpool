@@ -1,4 +1,3 @@
-// Server.go project main.go
 package main
 
 import (
@@ -68,7 +67,79 @@ func processMessage(session Session, message string) (string, error) {
 }
 
 func createCarpoolChat(session Session, message string) (string, error) {
-	return message, nil
+	message = strings.ToLower(message)
+	fromGUC, fromGUCFound := session["fromGUC"]
+	if !fromGUCFound {
+		if strings.Contains(message, "to guc") || strings.Contains(message, "to the guc") || strings.Contains(message, "going") {
+			session["fromGUC"] = false
+			return "You've chosen to create a carpool that leaves the GUC. Where are you going?", nil
+		} else {
+			if strings.Contains(message, "from guc") || strings.Contains(message, "from the guc") || strings.Contains(message, "leaving") {
+				session["fromGUC"] = true
+				return "You've chosen to create a carpool that goes to the GUC. Where can you pick up ppl?", nil
+			} else {
+				return "I'm sorry you didn't answer my question. Are you going to the GUC or leaving the GUC?", nil
+			}
+		}
+	} else {
+		return "", fmt.Errorf("Whoops! An error occured in your session. Can you please log out and log back in again?")
+	}
+
+	_, latitudeFound := session["latitude"]
+	_, longitudeFound := session["longitude"]
+	if (!latitudeFound || !longitudeFound) && fromGUCFound {
+		if strings.Contains(message, "latitude") && strings.Contains(message, "longitude") {
+			exp := regexp.MustCompile(`[0-9]+[\.]?[0-9]*`)
+			session["latitude"] = exp.FindAllString(message, -1)[0]
+			session["longitude"] = exp.FindAllString(message, -1)[1]
+			return "You chose the location with the latitude " + session["latitude"].(string) + ", and the longitude " + session["longitude"].(string) + ". What time would you like to your ride to be?", nil
+		} else {
+			var response string
+			if fromGUC.(bool) {
+				response = "Where are you going?"
+			} else {
+				response = "Where can you pick up people?"
+			}
+			return "", fmt.Errorf("I'm sorry, but you didn't answer my question! " + response)
+		}
+	}
+	_, timeFound := session["time"]
+	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
+		stTime, err := time.Parse("Jan 2, 2006 at 3:04pm (EET)", message)
+		if err != nil {
+			return "", fmt.Errorf("An error occured when parsing the time. Can you please tell me again when you want your ride to be?")
+		}
+		session["time"] = stTime
+	}
+
+	_, timeFound = session["time"]
+	if timeFound && fromGUCFound && latitudeFound && longitudeFound {
+		details := getDetails(session)
+		return "Your request is complete! Here are the details: " + details + " Please wait while we find a suitable Carpool for you.", nil
+	}
+
+	_, currentPassengersFound := session["currentPassengers"]
+	if !currentPassengersFound {
+		return "Please enter how many cuurent passengers you have in the car? not including yourself", nil
+		if !(strings.Contains(message, "4")) || !(strings.Contains(message, "3")) || !(strings.Contains(message, "2")) || !(strings.Contains(message, "1")) || !(strings.Contains(message, "0")) {
+			return "you can only have 1-4 passengers, not including yourself", nil
+		} else {
+			return "You've enetered how many current passengers you have in the car", nil
+		}
+	}
+
+	_, possiblePassengersFound := session["possiblePassengers"]
+	if !possiblePassengersFound {
+		return "Please enter how many passengers you can take.", nil
+		if !(strings.Contains(message, "4")) || !(strings.Contains(message, "3")) || !(strings.Contains(message, "2")) || !(strings.Contains(message, "1")) || !(strings.Contains(message, "0")) {
+			return "you can only take up to 4 passengers", nil
+		} else {
+			return "You've enetered the possible passengers", nil
+		}
+	}
+
+	return "", fmt.Errorf("Whoops! An error occured in your session. Can you please log out and log back in again?")
+
 }
 
 func requestCarpoolChat(session Session, message string) (string, error) {
