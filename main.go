@@ -1,10 +1,13 @@
 package main
 
 import (
+	"crypto/md5"
 	"net/http"
+	"encoding/hex"
 	"encoding/json"
 	"log"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"fmt"
 	"regexp"
@@ -117,7 +120,8 @@ func createCarpoolChat(session Session, message string) (string, error) {
 		} else {
 			exp := regexp.MustCompile(`[1-4]`)
 			number := exp.FindAllString(comparable, -1)[0]
-			return "You've chosen to take up to " + string(number) + " more passengers.", nil
+			session["availableSeats"] = number
+			return "You've chosen to take up to " + number + " more passengers.", nil
 		}
 	}
 
@@ -206,19 +210,14 @@ func startSession(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	gucID := req.Header.Get("Authorization")
-	if gucID == "" {
-		res.WriteHeader(http.StatusForbidden)
-		writeJSON(res, JSON {
-			"message": "You don't seem to be logged in. You need to login with your GUC email and password.",
-		})
-		return
-	}
+	hasher := md5.New()
+	hasher.Write([]byte(strconv.FormatInt(time.Now().Unix(), 10)))
+	uuid := hex.EncodeToString(hasher.Sum(nil))
 
-	sessions[gucID] = Session{}
+	sessions[uuid] = Session{}
 	writeJSON(res, JSON {
-		"gucID": gucID,
-		"message": "Welocme to GUC Carpool! Would you like to get a ride? Or are you offering one?",
+		"uuid": uuid,
+		"message": "Welocme to GUC Carpool! Please log in using your GUC-ID and name",
 	})
 }
 
@@ -231,8 +230,8 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	gucID := req.Header.Get("Authorization")
-	if gucID == "" {
+	uuid := req.Header.Get("Authorization")
+	if uuid == "" {
 		res.WriteHeader(http.StatusUnauthorized)
 		writeJSON(res, JSON {
 			"message": "I'm sorry, but you don't seem to be logged in. Please log in and try again.",
@@ -240,7 +239,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, sessionFound := sessions[gucID]
+	session, sessionFound := sessions[uuid]
 	if !sessionFound {
 		res.WriteHeader(http.StatusUnauthorized)
 		writeJSON(res, JSON {
@@ -259,6 +258,28 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer req.Body.Close()
+
+	_, loggedIn := session["gucID"]
+	if !loggedIn {
+		_, gucIDFound := data["gucID"]
+		_, nameFound := data["name"]
+		if !gucIDFound || !nameFound {
+			res.WriteHeader(http.StatusUnauthorized)
+			writeJSON(res, JSON {
+				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again.",
+			})
+			return
+		} else {
+			gucID := data["gucID"].(string)
+			name := data["name"].(string)
+			session["gucID"] = gucID
+			session["name"] = name
+			writeJSON(res, JSON {
+				"message": "Hello " + name + ". Are you offering a ride, or are you requesting one?",
+			})
+			return
+		}
+	}
 
 	_, received := data["message"]
 	if !received {
