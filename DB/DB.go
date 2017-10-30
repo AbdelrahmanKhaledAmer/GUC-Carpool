@@ -14,78 +14,12 @@ you should go get these packages first
 "gopkg.in/mgo.v2"
 "github.com/night-codes/mgo-ai"
 "gopkg.in/mgo.v2/bson"
-
-to test code in main func change the package to main and put it in separate folder
 */
 
 var (
 	//IsDrop show the status of DB
 	IsDrop = true
 )
-
-//CarpoolRequest : request made by students to,from guc
-type CarpoolRequest struct {
-	GUCID              string
-	Longitude          float64
-	Latitude           float64
-	PostID             uint64 `bson:"_id,omitempty"`
-	Time               time.Time
-	StartTime          time.Time // time parsing done outside database for multiple format
-	CurrentPassengers  []string
-	PossiblePassengers []string
-	Name               string
-	FromGUC            bool
-	AvailableSeats     int
-}
-
-//NewCarpool create new carpool request return the newly created request
-func NewCarpool(GUCID string, Longitude float64, Latitude float64, Name string, FromGUC bool, AvailableSeats int, StartTime string) (req CarpoolRequest, err error) {
-	mySlice1 := make([]string, 0)
-	stTime, err := time.Parse("Jan 2, 2006 at 3:04pm (EET)", StartTime)
-	if err != nil {
-		return req, err
-	}
-	req = CarpoolRequest{
-		GUCID:              GUCID,
-		Longitude:          Longitude,
-		Latitude:           Latitude,
-		Time:               time.Now(),
-		StartTime:          stTime,
-		CurrentPassengers:  mySlice1,
-		PossiblePassengers: mySlice1,
-		Name:               Name,
-		FromGUC:            FromGUC,
-		AvailableSeats:     AvailableSeats,
-	}
-	return req, nil
-}
-
-/*func main() {
-	// test Insert Data
-	//should check if start time is a valid time format first
-	newC, err := NewCarpool("34-111", 31.25, 32.56, "mohamed", true, 5, "Jan 2, 2006 at 3:04pm (EET)") //newC will have default values
-	if err != nil {
-		fmt.Println(err.Error())
-		fmt.Println(newC)
-	}
-	err = InsertDB(&newC)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	//test Query code
-	rs, err := QueryAll()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println(rs)
-
-	//test update code
-	err = updateDB(1, 31, 32, true, 4)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-}*/
 
 func updateDB(postid, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int) error {
 	session, err := initDBSession()
