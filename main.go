@@ -144,9 +144,25 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	_, isEditingExists := session["isEditing"]
+	if isEditingExists {
+		editResponse, err := editRequest(session, data["message"].(string))
+		if err != nil {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			writeJSON(res, JSON{
+				"message": string(err.Error()),
+			})
+			return
+		}
+		writeJSON(res, JSON{
+			"message": editResponse,
+		})
+		return
+	}
+
 	_, requestExists := session["requestComplete"]
 	if requestExists {
-		postRequestHandler(res, data["message"].(string))
+		postRequestHandler(res, session, data)
 		return
 	}
 
@@ -309,8 +325,8 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 	return "", fmt.Errorf("Whoops! An error occured in your session. Can you please log out and log back in again?")
 }
 
-func postRequestHandler(res http.ResponseWriter, message string) {
-	comparable := strings.ToLower(message)
+func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
+	comparable := strings.ToLower(data["message"].(string))
 	if strings.Contains(comparable, "view all") {
 		allRequests, err := DB.QueryAll()
 		if err != nil {
@@ -328,9 +344,18 @@ func postRequestHandler(res http.ResponseWriter, message string) {
 	} else if strings.Contains(comparable, "view suitable") {
 
 	} else if strings.Contains(comparable, "edit") {
-
+		session["isEditing"] = true
 	} else if strings.Contains(comparable, "cancel") {
-
+		delete(session, "fromGUC")
+		delete(session, "latitude")
+		delete(session, "longitude")
+		delete(session, "time")
+		delete(session, "requestComplete")
+		delete(session, "requestOrCreate")
+		writeJSON(res, JSON{
+			"message": "Your carpool request has been cancelled successfully. You can now start over. Do you want to request a carpool, or are you offering one?",
+		})
+		return
 	} else if strings.Contains(comparable, "choose") {
 
 	}
@@ -339,6 +364,10 @@ func postRequestHandler(res http.ResponseWriter, message string) {
 		"message": "I did not understand what you said. Would you like to view all the available carpools, the most suitable carpools, cancel your request, edit your request or choose an available carpool?",
 	})
 	return
+}
+
+func editRequest(session Session, message string) (string, error) {
+	return "", nil
 }
 
 // Function to write out a JSON response.
