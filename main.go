@@ -144,22 +144,6 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, isEditingExists := session["isEditing"]
-	if isEditingExists {
-		editResponse, err := editRequest(session, data["message"].(string))
-		if err != nil {
-			res.WriteHeader(http.StatusUnprocessableEntity)
-			writeJSON(res, JSON{
-				"message": string(err.Error()),
-			})
-			return
-		}
-		writeJSON(res, JSON{
-			"message": editResponse,
-		})
-		return
-	}
-
 	_, requestExists := session["requestComplete"]
 	if requestExists {
 		postRequestHandler(res, session, data)
@@ -342,9 +326,16 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		})
 		return
 	} else if strings.Contains(comparable, "view suitable") {
-
+		// TODO delete for front end, or sort and filter posts based on time and location
 	} else if strings.Contains(comparable, "edit") {
-		session["isEditing"] = true
+		delete(session, "fromGUC")
+		delete(session, "latitude")
+		delete(session, "longitude")
+		delete(session, "time")
+		delete(session, "requestComplete")
+		writeJSON(res, JSON{
+			"message": "You chose to edit your carpool request. Let's do this piece by piece. Firstly, are you going to the GUC, or are you leaving campus?",
+		})
 	} else if strings.Contains(comparable, "cancel") {
 		delete(session, "fromGUC")
 		delete(session, "latitude")
@@ -357,17 +348,13 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		})
 		return
 	} else if strings.Contains(comparable, "choose") {
-
+		//TODO get request ID and edit in database (add possible passenger)
 	}
 	res.WriteHeader(http.StatusUnprocessableEntity)
 	writeJSON(res, JSON{
 		"message": "I did not understand what you said. Would you like to view all the available carpools, the most suitable carpools, cancel your request, edit your request or choose an available carpool?",
 	})
 	return
-}
-
-func editRequest(session Session, message string) (string, error) {
-	return "", nil
 }
 
 // Function to write out a JSON response.
