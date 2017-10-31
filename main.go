@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"regexp"
 	"time"
-	//"./DB"
+	"DB"
 )
 
 type (
@@ -24,7 +24,7 @@ var (
 	sessions = map[string]Session{}
 )
 
-
+// Main function to start the server and handle all incoming routes.
 func main() {
 	http.HandleFunc("/", serveAndLog(serve))
 	http.HandleFunc("/welcome", serveAndLog(startSession))
@@ -32,6 +32,7 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
+// Intermediary function that logs the current request and the status code attached to the response.
 func serveAndLog(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		res := httptest.NewRecorder()
@@ -46,12 +47,14 @@ func serveAndLog(handler http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// Default route handler.
 func serve(res http.ResponseWriter, req *http.Request) {
 	writeJSON(res, JSON {
 		"message": "Please use the route '/welcome' to log in.",
 	})
 }
 
+// 
 func startSession(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		res.WriteHeader(http.StatusMethodNotAllowed)
@@ -197,7 +200,8 @@ func getDetails(session Session) string {
 
 func createCarpoolChat(session Session, message string) (string, error) {
 	comparable := strings.ToLower(message)
-	fromGUC, fromGUCFound := session["fromGUC"]
+	FromGUC, fromGUCFound := session["fromGUC"]
+
 	if !fromGUCFound {
 		if strings.Contains(comparable, "to guc") || strings.Contains(comparable, "to the guc") || strings.Contains(comparable, "going") {
 			session["fromGUC"] = false
@@ -215,12 +219,12 @@ func createCarpoolChat(session Session, message string) (string, error) {
 	if (!latitudeFound || !longitudeFound) && fromGUCFound {
 		if strings.Contains(comparable, "latitude") && strings.Contains(comparable, "longitude") {
 			exp := regexp.MustCompile(`[0-9]+[\.]?[0-9]*`)
-			session["latitude"] = exp.FindAllString(comparable, -1)[0]
-			session["longitude"] = exp.FindAllString(comparable, -1)[1]
-			return "You chose the location with the latitude " + session["latitude"].(string) + ", and the longitude " + session["longitude"].(string) + ". What time would you like to your ride to be?", nil
+			session["latitude"], _ = strconv.ParseFloat(exp.FindAllString(comparable, -1)[0], 64)
+			session["longitude"], _ = strconv.ParseFloat(exp.FindAllString(comparable, -1)[1], 64)
+			return "You chose the location with the latitude " + strconv.FormatFloat(session["latitude"].(float64), 'f', -1, 64) + ", and the longitude " + strconv.FormatFloat(session["longitude"].(float64), 'f', -1, 64) + ". What time would you like to your ride to be?", nil
 		} else {
 			var response string
-			if fromGUC.(bool) {
+			if FromGUC.(bool) {
 				response = "Where are you going?"
 			} else {
 				response = "Where can you pick up people?"
@@ -228,7 +232,7 @@ func createCarpoolChat(session Session, message string) (string, error) {
 			return "", fmt.Errorf("I'm sorry, but you didn't answer my question! " + response)
 		}
 	}
-	_, timeFound := session["time"]
+	stTime, timeFound := session["time"]
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		stTime, err := time.Parse("Jan 2, 2006 at 3:04pm (EET)", message)
 		if err != nil {
@@ -239,23 +243,27 @@ func createCarpoolChat(session Session, message string) (string, error) {
 		}
 	}
 
-	_, availableSeats := session["availableSeats"]
-	if !availableSeats && timeFound && latitudeFound && longitudeFound && fromGUCFound {
+	AvailableSeats, availableSeatsFound := session["availableSeats"]
+	if !availableSeatsFound && timeFound && latitudeFound && longitudeFound && fromGUCFound {
 		if !(strings.Contains(comparable, "4")) && !(strings.Contains(comparable, "3")) && !(strings.Contains(comparable, "2")) && !(strings.Contains(comparable, "1")) {
 			return "you can only have 1-4 passengers, not including yourself. Please enter a valid number!", nil
 		} else {
 			exp := regexp.MustCompile(`[1-4]`)
-			number := exp.FindAllString(comparable, -1)[0]
+			number0, _ := strconv.ParseInt(exp.FindAllString(comparable, -1)[0], 10, 64)
+			number := int(number0)
 			session["availableSeats"] = number
-			return "You've chosen to take up to " + number + " more passengers.", nil
+			return "You've chosen to take up to " + strconv.FormatInt(number0, 10) + " more passengers.", nil
 		}
 	}
-
-	// TODO DATABASE
+	C, err := DB.NewCarpool(session["gucID"].(string), session["longitude"].(float64), session["latitude"].(float64), session["name"].(string), FromGUC.(bool), AvailableSeats.(int), stTime.(time.Time).Format("Jan 2, 2006 at 3:04pm (EET)"))
+	if err == nil {
+		DB.InsertDB(&C)
+	} else {
+		return "kalam 3eeeeeb", fmt.Errorf("kalam 3eeeb awy y3ny")
+	}
 
 	return "", fmt.Errorf("Whoops! An error occured in your session. Can you please log out and log back in again?")
 }
-
 func requestCarpoolChat(session Session, message string) (string, error) {
 	fromGUC, fromGUCFound := session["fromGUC"]
 	comparable := strings.ToLower(message)
