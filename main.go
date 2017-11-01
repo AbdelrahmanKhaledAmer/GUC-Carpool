@@ -17,7 +17,9 @@ import (
 )
 
 type (
-	JSON    map[string]interface{}
+	// JSON models a json for sending and recieving in requests and responses
+	JSON map[string]interface{}
+	// Session models the session of a user
 	Session map[string]interface{}
 )
 
@@ -127,6 +129,15 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		}
 		gucID := data["gucID"].(string)
 		name := data["name"].(string)
+		for key1, val1 := range sessions {
+			currentGucID, currentIDFound := val1["gucID"]
+			if currentIDFound && strings.EqualFold(currentGucID.(string), gucID) && uuid != key1 {
+				for key2, val2 := range val1 {
+					session[key2] = val2
+				}
+				delete(sessions, key1)
+			}
+		}
 		session["gucID"] = gucID
 		session["name"] = name
 		writeJSON(res, JSON{
