@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"GUC-Carpool/DB"
+	"github.com/GUC-Carpool/DB"
 )
 
 type (
