@@ -6,10 +6,19 @@ import (
 )
 
 func TestGetPostByID(t *testing.T) {
-	PostID := 3
+	PostID := 70
+	//does not exist
 	res, err := GetPostByID(uint64(PostID))
-	fmt.Println(res[0])
-	if err != nil || res == nil || len(res) == 0 {
+	fmt.Println(res)
+	if err != nil {
+		t.Error("failed")
+	}
+
+	//exist
+	PostID = 3
+	res, err = GetPostByID(uint64(PostID))
+	fmt.Println(res)
+	if err != nil {
 		t.Error("failed")
 	}
 }
@@ -21,7 +30,14 @@ func TestUpdate(t *testing.T) {
 	var currentPass []string
 	possiblePass = append(possiblePass, "Abdelrahman", "saher")
 	currentPass = append(currentPass, "Ahmed", "Mohamed")
-	err := UpdateDB(3, 31, 32, true, 4, currentPass, possiblePass)
+	//non existing post
+	err := UpdateDB(7, 31, 32, true, 4, currentPass, possiblePass)
+	if err == nil {
+		t.Error("problem")
+	}
+
+	//existing post
+	err = UpdateDB(3, 39, 32, true, 4, currentPass, possiblePass)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
