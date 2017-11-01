@@ -58,7 +58,6 @@ func QueryAll() ([]CarpoolRequest, error) { //TODO should be renamed with the pa
 	}
 
 	return results, nil
-
 }
 
 // GetPostByID : return 1 post matching specific ID
@@ -98,9 +97,7 @@ func InsertDB(req *CarpoolRequest) error {
 
 	err = c.Insert(req)
 	if err != nil {
-
 		return err
-
 	}
 	fmt.Println("insertion succ")
 	return nil
