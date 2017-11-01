@@ -130,12 +130,12 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		session["gucID"] = gucID
 		session["name"] = name
 		writeJSON(res, JSON{
-			"message": "Hello " + name + ". Are you offering a ride, or are you requesting one?",
+			"message": "Hello " + name + ". You can view all available carpools, cancel your request, edit your request or choose an available carpool. You can also choose to offer other people a ride by creating a carpool, or specify the details of a carpool you wish to request.",
 		})
 		return
 	}
 
-	_, received := data["message"]
+	messageRecieved, received := data["message"]
 	if !received {
 		res.WriteHeader(http.StatusBadRequest)
 		writeJSON(res, JSON{
@@ -144,8 +144,9 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, requestExists := session["requestComplete"]
-	if requestExists {
+	// TODO
+	comparable := strings.ToLower(messageRecieved.(string))
+	if strings.Contains(comparable, "edit") || strings.Contains(comparable, "cancel") || strings.Contains(comparable, "choose") || strings.Contains(comparable, "view all") {
 		postRequestHandler(res, session, data)
 		return
 	}
@@ -158,6 +159,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
+	// END TODO
 
 	writeJSON(res, JSON{
 		"message": finalResponse,
@@ -310,6 +312,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 }
 
 func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
+	_, requestExists := session["requestComplete"]
 	comparable := strings.ToLower(data["message"].(string))
 	if strings.Contains(comparable, "view all") {
 		allRequests, err := DB.QueryAll()
@@ -325,9 +328,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			"data":    allRequests,
 		})
 		return
-	} else if strings.Contains(comparable, "view suitable") {
-		// TODO delete for front end, or sort and filter posts based on time and location
-	} else if strings.Contains(comparable, "edit") {
+	} else if strings.Contains(comparable, "edit") && requestExists {
 		delete(session, "fromGUC")
 		delete(session, "latitude")
 		delete(session, "longitude")
@@ -343,16 +344,85 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		delete(session, "time")
 		delete(session, "requestComplete")
 		delete(session, "requestOrCreate")
+		previousChoice, myChoiceExists := session["myChoice"]
+		if myChoiceExists {
+			delete(session, "myChoice")
+			name := session["name"].(string)
+			carpoolRequests, err := DB.GetPostByID(previousChoice.(uint64))
+			if err != nil {
+				res.WriteHeader(http.StatusInternalServerError)
+				writeJSON(res, JSON{
+					"message": "There was an error while retrieving the data from our database. Please try again in a moment.",
+				})
+				return
+			}
+			carpoolRequest := carpoolRequests[0]
+			possiblePassengers := carpoolRequest.PossiblePassengers
+			currentPassengers := carpoolRequest.CurrentPassengers
+			for idx, val := range possiblePassengers {
+				if strings.EqualFold(val, name) {
+					possiblePassengers = append(possiblePassengers[:idx], possiblePassengers[idx+1:]...)
+					break
+				}
+			}
+			for idx, val := range currentPassengers {
+				if strings.EqualFold(val, name) {
+					possiblePassengers = append(currentPassengers[:idx], currentPassengers[idx+1:]...)
+					break
+				}
+			}
+			err = DB.UpdateDB(previousChoice.(uint64), carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, carpoolRequest.AvailableSeats, currentPassengers, possiblePassengers)
+			if err != nil {
+				res.WriteHeader(http.StatusInternalServerError)
+				writeJSON(res, JSON{
+					"message": "There was an error removing you from the carpool. Try again later.",
+				})
+				return
+			}
+		}
 		writeJSON(res, JSON{
 			"message": "Your carpool request has been cancelled successfully. You can now start over. Do you want to request a carpool, or are you offering one?",
 		})
 		return
 	} else if strings.Contains(comparable, "choose") {
-		//TODO get request ID and edit in database (add possible passenger)
+		exp := regexp.MustCompile(`[0-9]+`)
+		postID := exp.FindString(comparable)
+		postIDint, err := strconv.ParseUint(postID, 10, 64)
+		if err != nil {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			writeJSON(res, JSON{
+				"message": "There was an error when converting the postID from string to int. Please try again.",
+			})
+			return
+		}
+		carpoolRequests, err := DB.GetPostByID(postIDint)
+		if err != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			writeJSON(res, JSON{
+				"message": "There was an error while retrieving the data from our database. Please try again in a moment.",
+			})
+			return
+		}
+		carpoolRequest := carpoolRequests[0]
+		possiblePassengers := carpoolRequest.PossiblePassengers
+		possiblePassengers = append(possiblePassengers, session["name"].(string))
+		err = DB.UpdateDB(postIDint, carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, carpoolRequest.AvailableSeats, carpoolRequest.CurrentPassengers, possiblePassengers)
+		if err != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			writeJSON(res, JSON{
+				"message": "There was an error updating. Try again later.",
+			})
+			return
+		}
+		session["myChoice"] = postIDint
+		writeJSON(res, JSON{
+			"message": "You've successfully chosen a carpool! Now you have to wait for the original poster to accept your request.",
+		})
+		return
 	}
 	res.WriteHeader(http.StatusUnprocessableEntity)
 	writeJSON(res, JSON{
-		"message": "I did not understand what you said. Would you like to view all the available carpools, the most suitable carpools, cancel your request, edit your request or choose an available carpool?",
+		"message": "I did not understand what you said. Would you like to view all the available carpools,  cancel your request, edit your request or choose an available carpool?",
 	})
 	return
 }
