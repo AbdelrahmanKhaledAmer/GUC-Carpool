@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/night-codes/mgo-ai"
-	"gopkg.in/mgo.v2"
+	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -21,7 +21,8 @@ var (
 	IsDrop = true
 )
 
-func updateDB(postid, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int) error {
+//UpdateDB : update a carpool post
+func UpdateDB(postid, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int) error {
 	session, err := initDBSession()
 	defer session.Close()
 	if err != nil {
