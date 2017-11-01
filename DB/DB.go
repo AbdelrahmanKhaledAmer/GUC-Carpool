@@ -22,7 +22,7 @@ var (
 )
 
 //UpdateDB : update a carpool post
-func UpdateDB(postid, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int) error {
+func UpdateDB(postid, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int, CurrentPassengers []string, PossiblePassengers []string) error {
 	session, err := initDBSession()
 	defer session.Close()
 	if err != nil {
@@ -30,7 +30,7 @@ func UpdateDB(postid, Longitude float64, Latitude float64, FromGUC bool, Availab
 	}
 	c := session.DB("Carpool").C("CarpoolRequest")
 	colQuerier := bson.M{"_id": postid}
-	change := bson.M{"$set": bson.M{"longitude": Longitude, "latitude": Latitude, "fromguc": FromGUC, "availableseats": AvailableSeats, "time": time.Now()}}
+	change := bson.M{"$set": bson.M{"CurrentPassengers": CurrentPassengers, "PossiblePassengers": PossiblePassengers, "longitude": Longitude, "latitude": Latitude, "fromguc": FromGUC, "availableseats": AvailableSeats, "time": time.Now()}}
 	err = c.Update(colQuerier, change)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -53,6 +53,25 @@ func QueryAll() ([]CarpoolRequest, error) { //TODO should be renamed with the pa
 	c := session.DB("Carpool").C("CarpoolRequest")
 	var results []CarpoolRequest
 	err = c.Find(bson.M{}).All(&results) //c.Find(bson.M{"name": "Ahmed"}).All(&results) for filtering
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+
+}
+
+// GetPostByID : return 1 post matching specific ID
+func GetPostByID(PostID uint64) ([]CarpoolRequest, error) {
+	session, err := initDBSession()
+	defer session.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	c := session.DB("Carpool").C("CarpoolRequest")
+	var results []CarpoolRequest
+	err = c.Find(bson.M{"_id": PostID}).All(&results) //c.Find(bson.M{"name": "Ahmed"}).All(&results) for filtering
 	if err != nil {
 		return nil, err
 	}
