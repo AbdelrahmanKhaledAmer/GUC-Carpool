@@ -51,7 +51,7 @@ type Passenger struct {
 type PassengerRequest struct {
 	Passenger Passenger
 	PostID    uint64
-	IsCurrent bool
+	Notify    uint8
 }
 
 //NewPassenger create new Passenger  return the newly created Passenger
@@ -65,12 +65,12 @@ func NewPassenger(GUCID string, Name string) (req Passenger, err error) {
 }
 
 //NewPassengerRequest : request made by students to,from guc
-func NewPassengerRequest(GUCID string, Name string, PostID uint64, IsCurrent bool) (req PassengerRequest, err error) {
+func NewPassengerRequest(GUCID string, Name string, PostID uint64, Notify uint8) (req PassengerRequest, err error) {
 	pass, _ := NewPassenger(GUCID, Name)
 	req = PassengerRequest{
 		Passenger: pass,
 		PostID:    PostID,
-		IsCurrent: IsCurrent,
+		Notify:    Notify,
 	}
 	return req, nil
 }

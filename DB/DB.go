@@ -134,7 +134,7 @@ func DeleteDB(PostID uint64) error {
 //TODO enforce unique GUCID
 
 //UpdatePassengerRequest : update passenger
-func UpdatePassengerRequest(GUCID string, Name string, PostID uint64, IsCurrent bool) error {
+func UpdatePassengerRequest(GUCID string, Name string, PostID uint64, Notify uint8) error {
 	session, err := initDBSession()
 	defer session.Close()
 	if err != nil {
@@ -143,7 +143,7 @@ func UpdatePassengerRequest(GUCID string, Name string, PostID uint64, IsCurrent 
 	pass, _ := NewPassenger(GUCID, Name)
 	c := session.DB("Carpool").C("PassengerRequest")
 	colQuerier := bson.M{"passenger.gucid": GUCID}
-	change := bson.M{"$set": bson.M{"passenger": pass, "postid": PostID, "iscurrent": IsCurrent}}
+	change := bson.M{"$set": bson.M{"passenger": pass, "postid": PostID, "notify": Notify}}
 	err = c.Update(colQuerier, change)
 	if err != nil {
 		fmt.Println(err.Error())
