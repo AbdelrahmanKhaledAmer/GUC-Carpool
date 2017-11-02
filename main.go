@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/GUC-Carpool/DB"
-	"github.com/GUC-Carpool/DirectionsAPI"
+	"github.com/AbdelrahmanKhaledAmer/GUC-Carpool/DB"
+	"github.com/AbdelrahmanKhaledAmer/GUC-Carpool/DirectionsAPI"
 )
 
 type (
