@@ -207,21 +207,25 @@ func getDetails(session Session) string {
 }
 
 func createCarpoolChat(session Session, message string) (string, error) {
+	// make the message in lowercase to pass on
+
 	comparable := strings.ToLower(message)
 	FromGUC, fromGUCFound := session["fromGUC"]
 
+	//check if he's going to the guc or leaving the guc
 	if !fromGUCFound {
 		if strings.Contains(comparable, "to guc") || strings.Contains(comparable, "to the guc") || strings.Contains(comparable, "going") {
 			session["fromGUC"] = false
-			return "You've chosen to create a carpool that's going to the GUC. Where can you pick up ppl?", nil
+			return "You've chosen to create a carpool that's going to the GUC. Where can you pick up people? please enter your latitude and longitude", nil
 		} else if strings.Contains(comparable, "from guc") || strings.Contains(comparable, "from the guc") || strings.Contains(comparable, "leaving") {
 			session["fromGUC"] = true
-			return "You've chosen to create a carpool that's leaving the GUC. Where are you going?", nil
+			return "You've chosen to create a carpool that's leaving the GUC. Where are you going? please enter your latitude and longitude", nil
 		} else {
 			return "I'm sorry you didn't answer my question. Are you going to the GUC or leaving the GUC?", nil
 		}
 	}
 
+	//take his latitude and longitude
 	_, latitudeFound := session["latitude"]
 	_, longitudeFound := session["longitude"]
 	if (!latitudeFound || !longitudeFound) && fromGUCFound {
@@ -241,6 +245,7 @@ func createCarpoolChat(session Session, message string) (string, error) {
 		}
 	}
 
+	//take his start time
 	stTime, timeFound := session["time"]
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		stTime, err := time.Parse("Jan 2, 2006 at 3:04pm (EET)", message)
@@ -251,31 +256,39 @@ func createCarpoolChat(session Session, message string) (string, error) {
 			return "You want your ride to take place around " + (session["time"].(time.Time)).Format("Jan 2, 2006 at 3:04pm (EET)") + ". How many passengers can you take with you?", nil
 		}
 	}
-
-	AvailableSeats, availableSeatsFound := session["availableSeats"]
+	//take how many available seats
+	_, availableSeatsFound := session["availableSeats"]
 	if !availableSeatsFound && timeFound && latitudeFound && longitudeFound && fromGUCFound {
 		if !(strings.Contains(comparable, "4")) && !(strings.Contains(comparable, "3")) && !(strings.Contains(comparable, "2")) && !(strings.Contains(comparable, "1")) {
-			return "you can only have 1-4 passengers, not including yourself. Please enter a valid number!", nil
-		} else {
-			exp := regexp.MustCompile(`[1-4]`)
-			number0, _ := strconv.ParseInt(exp.FindAllString(comparable, -1)[0], 10, 64)
-			number := int(number0)
-			session["availableSeats"] = number
-			return "You've chosen to take up to " + strconv.FormatInt(number0, 10) + " more passengers. Now you can Edit your Carpool, Delete your Carpool, Accept or Reject a request, Cancel an accepted request, or View yur Carpool. Choose wisely my friend.", nil
+			return "you can only have 1 to 4 passengers, not including yourself. Please enter a valid number!", nil
 		}
-	}
-	C, err := DB.NewCarpool(session["gucID"].(string), session["longitude"].(float64), session["latitude"].(float64), session["name"].(string), FromGUC.(bool), AvailableSeats.(int), stTime.(time.Time).Format("Jan 2, 2006 at 3:04pm (EET)"))
-	if err == nil {
-		DB.InsertDB(&C)
-		session["createComplete"] = true
-		session["query"], err = DB.QueryAll()
-		if err != nil {
-			return "", err
+		exp := regexp.MustCompile(`[1-4]`)
+		number0, _ := strconv.ParseInt(exp.FindAllString(comparable, -1)[0], 10, 64)
+		number := int(number0)
+		session["availableSeats"] = number
+
+		//make a new carpool
+		_, postFound := session["postID"]
+		if !postFound {
+			C, err := DB.NewCarpool(session["gucID"].(string), session["longitude"].(float64), session["latitude"].(float64), session["name"].(string), FromGUC.(bool), session["availableSeats"].(int), stTime.(time.Time).Format("Jan 2, 2006 at 3:04pm (EET)"))
+			if err != nil {
+				return "", fmt.Errorf("whoops we couldn't make you a new carpool")
+			}
+			//insert that new carpool into the database
+			DB.InsertDB(&C)
+			session["createComplete"] = false
+			session["postID"] = C.PostID
+			session["currentPassengers"] = C.CurrentPassengers
+			session["possiblePassengers"] = C.PossiblePassengers
+		} else {
+			k := DB.UpdateDB(session["postID"].(uint64), session["longitude"].(float64), session["latitude"].(float64), session["fromGUC"].(bool), session["availableSeats"].(int), session["currentPassengers"].([]string), session["possiblePassengers"].([]string), stTime.(time.Time).Format("Jan 2, 2006 at 3:04pm (EET)"))
+			if k != nil {
+				return "", fmt.Errorf("We couldn't update your carpool, please try again")
+			}
+
 		}
 
-		return "Your Creation is complete! You can now view your carpool, delete carpool, edit your request, accept or reject a request, or cancel an acceptedd request. So, what do you want to do?", nil
-	} else {
-		return "kalam 3eeeeeb", fmt.Errorf("kalam 3eeeb awy y3ny")
+		return "You've chosen to take up to " + strconv.FormatInt(number0, 10) + " more passengers. Now you can Edit your Carpool, Delete your Carpool, Accept or Reject a request, or View yur Carpool. Choose wisely my friend.", nil
 	}
 
 	return "", fmt.Errorf("Whoops! An error occured in your session. Can you please log out and log back in again?")
@@ -335,21 +348,21 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 
 func postCreateHandler(res http.ResponseWriter, session Session, data JSON) {
 	_, createFound := session["createComplete"]
-	allCarpools, err := DB.QueryAll()
-	if err != nil {
-		return
-	}
-	carpool := allCarpools[0]
-	postID := carpool.PostID
+	postID := session["postID"]
 	comparable := strings.ToLower(data["message"].(string))
-	if strings.Contains(comparable, "delete") {
-		err = DB.DeleteDB(postID)
+	if strings.Contains(comparable, "delete") && createFound {
+		err := DB.DeleteDB(postID.(uint64))
 		if err != nil {
-			fmt.Errorf("Remove failed")
-
+			return
 		}
+		delete(session, "fromGUC")
+		delete(session, "latitude")
+		delete(session, "longitude")
+		delete(session, "time")
+		delete(session, "availableSeats")
+		delete(session, "createComplete")
 		writeJSON(res, JSON{
-			"message": "You chose to delete your carpool."})
+			"message": "You chose to delete your carpool. Now you can create or request a carpool."})
 		return
 
 	} else if strings.Contains(comparable, "edit") {
@@ -359,9 +372,6 @@ func postCreateHandler(res http.ResponseWriter, session Session, data JSON) {
 		delete(session, "time")
 		delete(session, "availableSeats")
 		delete(session, "createComplete")
-		if err != nil {
-			fmt.Errorf("Edit failed")
-		}
 		writeJSON(res, JSON{
 			"message": "You chose to edit your carpool. Let's do this piece by piece. Firstly, are you going to the GUC, or are you leaving campus?	"})
 		return
@@ -370,7 +380,7 @@ func postCreateHandler(res http.ResponseWriter, session Session, data JSON) {
 	} else if strings.Contains(comparable, "reject") && createFound {
 
 	} else if strings.Contains(comparable, "view") && createFound {
-		myRequest, err := DB.GetPostByID(postID)
+		myRequest, err := DB.GetPostByID(postID.(uint64))
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{

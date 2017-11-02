@@ -25,7 +25,7 @@ var (
 /////////////////////////////
 
 //UpdateDB : update a carpool post
-func UpdateDB(postid uint64, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int, CurrentPassengers []string, PossiblePassengers []string) error {
+func UpdateDB(postid uint64, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int, CurrentPassengers []string, PossiblePassengers []string, Time string) error {
 	session, err := initDBSession()
 	defer session.Close()
 	if err != nil {
@@ -117,7 +117,7 @@ func DeleteDB(PostID uint64) error {
 
 	c := session.DB("Carpool").C("CarpoolRequest")
 
-	err = c.Remove(bson.M{"postid": PostID})
+	err = c.Remove(bson.M{"_id": PostID})
 	if err != nil {
 		fmt.Printf("remove fail %v\n", err)
 		return err
