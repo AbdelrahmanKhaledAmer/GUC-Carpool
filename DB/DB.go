@@ -297,6 +297,9 @@ func AcceptPassenger(GUCID string, PostID uint64) error {
 	if err != nil {
 		return err
 	}
+	if len(passengers) == 0 {
+		return errors.New("you did not request this carpool")
+	}
 
 	if availableseats == 0 {
 		return errors.New("no seat available")
