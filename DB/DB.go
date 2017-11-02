@@ -130,10 +130,10 @@ func DeleteDB(PostID uint64) error {
 
 // PassengerRequest Functions begin
 
-//UpdatePassengerRequest : update passenger
 //since passenger can ride with only one carpool the GUCID will be a unique Identifier
 //TODO enforce unique GUCID
 
+//UpdatePassengerRequest : update passenger
 func UpdatePassengerRequest(GUCID string, Name string, PostID uint64, IsCurrent bool) error {
 	session, err := initDBSession()
 	defer session.Close()
@@ -174,7 +174,7 @@ func QueryAllPassengerRequests() ([]PassengerRequest, error) { //TODO should be 
 
 }
 
-// GetPassengerRequestByGUCID : return 1 post matching specific ID
+// GetPassengerRequestByGUCID : return 1 passenger matching specific ID
 func GetPassengerRequestByGUCID(GUCID string) ([]PassengerRequest, error) {
 	session, err := initDBSession()
 	defer session.Close()
@@ -214,7 +214,7 @@ func InsertPassengerRequest(req *PassengerRequest) error {
 	return nil
 }
 
-//DeletePassengerRequest : Delete carpool request
+//DeletePassengerRequest : Delete passengerrequest
 func DeletePassengerRequest(GUCID string) error {
 
 	session, err := initDBSession()
