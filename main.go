@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/GUC-Carpool/DB"
+	"github.com/GUC-Carpool/DirectionsAPI"
 )
 
 type (
@@ -187,7 +188,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 
 	// See if the user wishes to interact with data from the database or edit his session.
 	comparable := strings.ToLower(messageRecieved.(string))
-	if strings.Contains(comparable, "edit") || strings.Contains(comparable, "cancel") || strings.Contains(comparable, "choose") || strings.Contains(comparable, "view") || strings.Contains(comparable, "delete") || strings.Contains(comparable, "reject") || strings.Contains(comparable, "accept") {
+	if strings.Contains(comparable, "edit") || strings.Contains(comparable, "cancel") || strings.Contains(comparable, "choose") || (strings.Contains(comparable, "view") && (strings.Contains(comparable, "all") || strings.Contains(comparable, "carpool"))) || strings.Contains(comparable, "delete") || strings.Contains(comparable, "reject") || strings.Contains(comparable, "accept") || strings.Contains(comparable, "directions") {
 		postRequestHandler(res, session, data)
 		return
 	}
@@ -697,6 +698,38 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		writeJSON(res, JSON{
 			"message": "You successfully accepted the passenger.",
+		})
+		return
+	} else if strings.Contains(comparable, "directions") {
+		if !createFound {
+			res.WriteHeader(http.StatusUnauthorized)
+			writeJSON(res, JSON{
+				"message": "I can't give you the directions because you don't have a carpool created.",
+			})
+			return
+		}
+		if session["fromGUC"].(bool) {
+			directions, err := DirectionsAPI.GetRoute("German University IN cairo", strconv.FormatFloat(session["latitude"].(float64), 'f', -1, 64)+","+strconv.FormatFloat(session["longitude"].(float64), 'f', -1, 64))
+			if err != nil {
+				res.WriteHeader(http.StatusInternalServerError)
+				writeJSON(res, JSON{
+					"message": "An error occured while recieving the directions. Please try again later.",
+				})
+			}
+			writeJSON(res, JSON{
+				"message": directions,
+			})
+			return
+		}
+		directions, err := DirectionsAPI.GetRoute(strconv.FormatFloat(session["latitude"].(float64), 'f', -1, 64)+","+strconv.FormatFloat(session["longitude"].(float64), 'f', -1, 64), "German University IN cairo")
+		if err != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			writeJSON(res, JSON{
+				"message": "An error occured while recieving the directions. Please try again later.",
+			})
+		}
+		writeJSON(res, JSON{
+			"message": directions,
 		})
 		return
 	}
