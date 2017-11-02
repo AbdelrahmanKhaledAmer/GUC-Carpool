@@ -2,3 +2,4 @@
 /gopkg.in
 /vendor
 /tmp
+/vendor/**/.git

@@ -1,0 +1,78 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "OyvcR/m5LOlyHm9FRy8ni52Otgc=",
+			"path": "github.com/grokify/html-strip-tags-go",
+			"revision": "7a55ac806487a66b5d52fa2215f5d60aa33b5336",
+			"revisionTime": "2017-06-08T20:18:08Z"
+		},
+		{
+			"checksumSHA1": "AmmgTEwqZWUYx61PmJbXWNwiHrc=",
+			"origin": "vendor/github.com/night-codes/mgo-ai",
+			"path": "github.com/night-codes/mgo-ai",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "GtamqiJoL7PGHsN454AoffBFMa8=",
+			"path": "golang.org/x/net/context",
+			"revision": "c73622c77280266305273cb545f54516ced95b93",
+			"revisionTime": "2017-06-11T01:16:46Z"
+		},
+		{
+			"checksumSHA1": "WHc3uByvGaMcnSoI21fhzYgbOgg=",
+			"path": "golang.org/x/net/context/ctxhttp",
+			"revision": "c73622c77280266305273cb545f54516ced95b93",
+			"revisionTime": "2017-06-11T01:16:46Z"
+		},
+		{
+			"checksumSHA1": "SncamQrdIYiIzBZ3KzZIA/fbOoY=",
+			"path": "googlemaps.github.io/maps",
+			"revision": "da8b5a37599fe526eb41b84489aa6c188c5c03dc",
+			"revisionTime": "2017-10-20T01:06:42Z"
+		},
+		{
+			"checksumSHA1": "T47E4DD/+UCGq0rAc70yGCEWJ0w=",
+			"path": "googlemaps.github.io/maps/internal",
+			"revision": "da8b5a37599fe526eb41b84489aa6c188c5c03dc",
+			"revisionTime": "2017-10-20T01:06:42Z"
+		},
+		{
+			"checksumSHA1": "1D8GzeoFGUs5FZOoyC2DpQg8c5Y=",
+			"origin": "vendor/gopkg.in/mgo.v2",
+			"path": "gopkg.in/mgo.v2",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "YsB2DChSV9HxdzHaKATllAUKWSI=",
+			"origin": "vendor/gopkg.in/mgo.v2/bson",
+			"path": "gopkg.in/mgo.v2/bson",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "XQsrqoNT1U0KzLxOFcAZVvqhLfk=",
+			"origin": "vendor/gopkg.in/mgo.v2/internal/json",
+			"path": "gopkg.in/mgo.v2/internal/json",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "LEvMCnprte47qdAxWvQ/zRxVF1U=",
+			"origin": "vendor/gopkg.in/mgo.v2/internal/sasl",
+			"path": "gopkg.in/mgo.v2/internal/sasl",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "+1WDRPaOphSCmRMxVPIPBV4aubc=",
+			"origin": "vendor/gopkg.in/mgo.v2/internal/scram",
+			"path": "gopkg.in/mgo.v2/internal/scram",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		}
+	],
+	"rootPath": "github.com/AbdelrahmanKhaledAmer/GUC-Carpool"
+}
