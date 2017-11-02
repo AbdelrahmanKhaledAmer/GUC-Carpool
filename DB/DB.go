@@ -119,7 +119,7 @@ func DeleteDB(PostID uint64) error {
 
 	c := session.DB("Carpool").C("CarpoolRequest")
 
-	err = c.Remove(bson.M{"postid": PostID})
+	err = c.Remove(bson.M{"_id": PostID})
 	if err != nil {
 		fmt.Printf("remove fail %v\n", err)
 		return err
@@ -241,7 +241,9 @@ func RejectPassenger(GUCID string, PostID uint64) error {
 	if err != nil {
 		return err
 	}
-
+	if len(carpoolRequests) == 0 {
+		return errors.New("no post with this ID")
+	}
 	wasCurrent := false
 	carpoolRequest := carpoolRequests[0]
 	possiblePassengers := carpoolRequest.PossiblePassengers
@@ -254,7 +256,7 @@ func RejectPassenger(GUCID string, PostID uint64) error {
 	}
 	for idx, val := range currentPassengers {
 		if strings.EqualFold(val, GUCID) {
-			possiblePassengers = append(currentPassengers[:idx], currentPassengers[idx+1:]...)
+			currentPassengers = append(currentPassengers[:idx], currentPassengers[idx+1:]...)
 			wasCurrent = true
 			break
 		}
@@ -273,6 +275,13 @@ func RejectPassenger(GUCID string, PostID uint64) error {
 		return err
 	}
 
+	if len(passengerRequests) == 0 {
+		return errors.New("you did not request this carpool")
+	}
+	if PostID != passengerRequests[0].PostID {
+		return errors.New("you can not accept a passenger that did not request your carpool")
+	}
+
 	passengerRequest := passengerRequests[0]
 	err = UpdatePassengerRequest(passengerRequest.Passenger.GUCID, passengerRequest.Passenger.Name, passengerRequest.PostID, 0)
 	if err != nil {
@@ -289,6 +298,9 @@ func AcceptPassenger(GUCID string, PostID uint64) error {
 	if err != nil {
 		return err
 	}
+	if (len(posts)) == 0 {
+		return errors.New("no post with this id")
+	}
 	possiblepassengers := posts[0].PossiblePassengers
 	currentpassengers := posts[0].CurrentPassengers
 	availableseats := posts[0].AvailableSeats
@@ -299,6 +311,9 @@ func AcceptPassenger(GUCID string, PostID uint64) error {
 	}
 	if len(passengers) == 0 {
 		return errors.New("you did not request this carpool")
+	}
+	if PostID != passengers[0].PostID {
+		return errors.New("you can not accept a passenger that did not request your carpool")
 	}
 
 	if availableseats == 0 {
