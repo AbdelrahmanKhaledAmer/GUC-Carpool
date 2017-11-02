@@ -40,3 +40,37 @@ func NewCarpool(GUCID string, Longitude float64, Latitude float64, Name string, 
 	}
 	return req, nil
 }
+
+//Passenger : current or possible Passenger riding the car
+type Passenger struct {
+	GUCID string
+	Name  string
+}
+
+//PassengerRequest : request made by students to,from guc
+type PassengerRequest struct {
+	Passenger Passenger
+	PostID    uint64
+	IsCurrent bool
+}
+
+//NewPassenger create new Passenger  return the newly created Passenger
+func NewPassenger(GUCID string, Name string) (req Passenger, err error) {
+
+	req = Passenger{
+		GUCID: GUCID,
+		Name:  Name,
+	}
+	return req, nil
+}
+
+//NewPassengerRequest : request made by students to,from guc
+func NewPassengerRequest(GUCID string, Name string, PostID uint64, IsCurrent bool) (req PassengerRequest, err error) {
+	pass, _ := NewPassenger(GUCID, Name)
+	req = PassengerRequest{
+		Passenger: pass,
+		PostID:    PostID,
+		IsCurrent: IsCurrent,
+	}
+	return req, nil
+}

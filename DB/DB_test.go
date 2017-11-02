@@ -5,23 +5,23 @@ import (
 	"testing"
 )
 
-// func TestGetPostByID(t *testing.T) {
-// 	PostID := 70
-// 	//does not exist
-// 	res, err := GetPostByID(uint64(PostID))
-// 	fmt.Println(res)
-// 	if err != nil {
-// 		t.Error("failed")
-// 	}
+func TestGetPostByID(t *testing.T) {
+	PostID := 70
+	//does not exist
+	res, err := GetPostByID(uint64(PostID))
+	fmt.Println(res)
+	if err != nil {
+		t.Error("failed")
+	}
 
-// 	//exist
-// 	PostID = 3
-// 	res, err = GetPostByID(uint64(PostID))
-// 	fmt.Println(res)
-// 	if err != nil {
-// 		t.Error("failed")
-// 	}
-// }
+	//exist
+	PostID = 3
+	res, err = GetPostByID(uint64(PostID))
+	fmt.Println(res)
+	if err != nil {
+		t.Error("failed")
+	}
+}
 
 func TestUpdate(t *testing.T) {
 
@@ -46,4 +46,28 @@ func TestUpdate(t *testing.T) {
 	s1, err = QueryAll()
 	fmt.Println(s1)
 
+}
+
+func TestPassengerInsert(t *testing.T) {
+	passreq, _ := NewPassengerRequest("3-4578", "koko", 2, true)
+	InsertPassengerRequest(&passreq)
+}
+
+func TestPassengerQueryALL(t *testing.T) {
+	fmt.Println(QueryAllPassengerRequests())
+}
+
+func TestPassengerQueryONE(t *testing.T) {
+	fmt.Println(GetPassengerRequestByGUCID("4"))
+	fmt.Println(GetPassengerRequestByGUCID("3-4578"))
+}
+
+func TestUpdatePassenger(t *testing.T) {
+	fmt.Println(UpdatePassengerRequest("4", "wawa", 4, true))
+	fmt.Println(UpdatePassengerRequest("3-4578", "hamada", 2, false))
+}
+
+func TestRemovePassenger(t *testing.T) {
+	fmt.Println(DeletePassengerRequest("4"))
+	fmt.Println(DeletePassengerRequest("3-4578"))
 }
