@@ -234,24 +234,6 @@ func DeletePassengerRequest(GUCID string) error {
 	return nil
 }
 
-//Passenger request functions end
-
-func initDBSession() (*mgo.Session, error) {
-	session, err := mgo.Dial("127.0.0.1")
-	if err != nil {
-		return nil, err
-	}
-	session.SetMode(mgo.Monotonic, true)
-	// Drop Database
-	if IsDrop {
-		err = session.DB("gucCarpool").DropDatabase()
-		if err != nil {
-			return nil, err
-		}
-	}
-	return session, nil
-}
-
 func AcceptPassenger(GUCID string, PostID uint64) error {
 
 	posts, err := GetPostByID(PostID)
@@ -265,6 +247,9 @@ func AcceptPassenger(GUCID string, PostID uint64) error {
 	passengers, err := GetPassengerRequestByGUCID(GUCID)
 	if err != nil {
 		return err
+	}
+	if len(passengers) == 0 {
+		return errors.New("you did not request this carpool")
 	}
 
 	if availableseats == 0 {
@@ -281,4 +266,22 @@ func AcceptPassenger(GUCID string, PostID uint64) error {
 		}
 	}
 	return errors.New("not a possible passenger")
+}
+
+//Passenger request functions end
+
+func initDBSession() (*mgo.Session, error) {
+	session, err := mgo.Dial("127.0.0.1")
+	if err != nil {
+		return nil, err
+	}
+	session.SetMode(mgo.Monotonic, true)
+	// Drop Database
+	if IsDrop {
+		err = session.DB("gucCarpool").DropDatabase()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return session, nil
 }
