@@ -235,7 +235,7 @@ func DeletePassengerRequest(GUCID string) error {
 	return nil
 }
 
-//RejectPassenger : Removes a passenger fromthe carpool, and sets the notification variable.
+//RejectPassenger : Removes a passenger from the carpool, and sets the notification variable.
 func RejectPassenger(GUCID string, PostID uint64) error {
 	carpoolRequests, err := GetPostByID(PostID)
 	if err != nil {
@@ -263,7 +263,7 @@ func RejectPassenger(GUCID string, PostID uint64) error {
 	if wasCurrent {
 		availableSeats++
 	}
-	err = UpdateDB(carpoolRequest.PostID, carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, availableSeats, currentPassengers, possiblePassengers)
+	err = UpdateDB(carpoolRequest.PostID, carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, availableSeats, currentPassengers, possiblePassengers, carpoolRequest.StartTime)
 	if err != nil {
 		return err
 	}
@@ -282,24 +282,7 @@ func RejectPassenger(GUCID string, PostID uint64) error {
 	return nil
 }
 
-//Passenger request functions end
-
-func initDBSession() (*mgo.Session, error) {
-	session, err := mgo.Dial("127.0.0.1")
-	if err != nil {
-		return nil, err
-	}
-	session.SetMode(mgo.Monotonic, true)
-	// Drop Database
-	if IsDrop {
-		err = session.DB("gucCarpool").DropDatabase()
-		if err != nil {
-			return nil, err
-		}
-	}
-	return session, nil
-}
-
+// AcceptPassenger : adds a passenger to the currentPassengers in the carpool, and sets the notification variable.
 func AcceptPassenger(GUCID string, PostID uint64) error {
 
 	posts, err := GetPostByID(PostID)
@@ -329,4 +312,22 @@ func AcceptPassenger(GUCID string, PostID uint64) error {
 		}
 	}
 	return errors.New("not a possible passenger")
+}
+
+//Passenger request functions end
+
+func initDBSession() (*mgo.Session, error) {
+	session, err := mgo.Dial("127.0.0.1")
+	if err != nil {
+		return nil, err
+	}
+	session.SetMode(mgo.Monotonic, true)
+	// Drop Database
+	if IsDrop {
+		err = session.DB("gucCarpool").DropDatabase()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return session, nil
 }

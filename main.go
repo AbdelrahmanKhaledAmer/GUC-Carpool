@@ -426,9 +426,9 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			}
 			availableSeats := carpoolRequest.AvailableSeats
 			if wasCurrent {
-				availableSeats--
+				availableSeats++
 			}
-			err = DB.UpdateDB(previousChoice.(uint64), carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, availableSeats, currentPassengers, possiblePassengers)
+			err = DB.UpdateDB(previousChoice.(uint64), carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, availableSeats, currentPassengers, possiblePassengers, carpoolRequest.StartTime)
 			if err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
@@ -478,7 +478,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		possiblePassengers := carpoolRequest.PossiblePassengers
 		possiblePassengers = append(possiblePassengers, session["gucID"].(string))
-		err = DB.UpdateDB(postIDint, carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, carpoolRequest.AvailableSeats, carpoolRequest.CurrentPassengers, possiblePassengers)
+		err = DB.UpdateDB(postIDint, carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, carpoolRequest.AvailableSeats, carpoolRequest.CurrentPassengers, possiblePassengers, carpoolRequest.StartTime)
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
