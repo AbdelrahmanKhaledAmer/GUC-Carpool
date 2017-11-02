@@ -333,11 +333,18 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 	}
 
 	// Get the time the user wants to leave.
+	createTime, createTimeFound := session["time"]
 	_, timeFound := session["timereq"]
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		stTime, err := time.Parse("Jan 2, 2006 at 3:04pm (EET)", message)
 		if err != nil {
 			return "", fmt.Errorf("An error occured when parsing the time. Can you please tell me again when you want your ride to be?")
+		}
+		if createTimeFound {
+			duration := stTime.Sub(createTime.(time.Time))
+			if duration.Hours() <= 4 {
+				return "", fmt.Errorf("You already have a carpool around that same time! Please choose a different time")
+			}
 		}
 		session["timereq"] = stTime
 	}

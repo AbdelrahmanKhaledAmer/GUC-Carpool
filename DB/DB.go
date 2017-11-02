@@ -2,6 +2,7 @@ package DB
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/night-codes/mgo-ai"
@@ -230,6 +231,53 @@ func DeletePassengerRequest(GUCID string) error {
 		fmt.Printf("remove passenger fail %v\n", err)
 		return err
 	}
+	return nil
+}
+
+//RejectPassenger : Removes a passenger fromthe carpool, and sets the notification variable.
+func RejectPassenger(GUCID string, PostID uint64) error {
+	carpoolRequests, err := GetPostByID(PostID)
+	if err != nil {
+		return err
+	}
+
+	wasCurrent := false
+	carpoolRequest := carpoolRequests[0]
+	possiblePassengers := carpoolRequest.PossiblePassengers
+	currentPassengers := carpoolRequest.CurrentPassengers
+	for idx, val := range possiblePassengers {
+		if strings.EqualFold(val, GUCID) {
+			possiblePassengers = append(possiblePassengers[:idx], possiblePassengers[idx+1:]...)
+			break
+		}
+	}
+	for idx, val := range currentPassengers {
+		if strings.EqualFold(val, GUCID) {
+			possiblePassengers = append(currentPassengers[:idx], currentPassengers[idx+1:]...)
+			wasCurrent = true
+			break
+		}
+	}
+	availableSeats := carpoolRequest.AvailableSeats
+	if wasCurrent {
+		availableSeats++
+	}
+	err = UpdateDB(carpoolRequest.PostID, carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, availableSeats, currentPassengers, possiblePassengers)
+	if err != nil {
+		return err
+	}
+
+	passengerRequests, err := GetPassengerRequestByGUCID(GUCID)
+	if err != nil {
+		return err
+	}
+
+	passengerRequest := passengerRequests[0]
+	err = UpdatePassengerRequest(passengerRequest.Passenger.GUCID, passengerRequest.Passenger.Name, passengerRequest.PostID, 0)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
