@@ -53,12 +53,13 @@ func serveAndLog(handler http.HandlerFunc) http.HandlerFunc {
 // Default route handler.
 func serve(res http.ResponseWriter, req *http.Request) {
 	writeJSON(res, JSON{
-		"message": "Please use the route '/welcome' to log in.",
+		"message": "Please use the route '/welcome' to log in, and the route '/chat' to talk.",
 	})
 }
 
-//
+// Function that creates the session variable and attaches a uuid (Unique user ID) to it.
 func startSession(res http.ResponseWriter, req *http.Request) {
+	// Only listen to GET requests.
 	if req.Method != http.MethodGet {
 		res.WriteHeader(http.StatusMethodNotAllowed)
 		writeJSON(res, JSON{
@@ -67,18 +68,22 @@ func startSession(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Create a new uuid
 	hasher := md5.New()
 	hasher.Write([]byte(strconv.FormatInt(time.Now().Unix(), 10)))
 	uuid := hex.EncodeToString(hasher.Sum(nil))
 
+	// Create a new session mapped to the new uuid and reply to the user.
 	sessions[uuid] = Session{}
 	writeJSON(res, JSON{
 		"uuid":    uuid,
-		"message": "Welocme to GUC Carpool! Please log in using your GUC-ID and name",
+		"message": "Welocme to GUC Carpool! Please log in using your GUC-ID and name separated by the delimiter ':'. Make sure to do this first on the '/chat' route.",
 	})
 }
 
+// Function to handle the chat route
 func handleChat(res http.ResponseWriter, req *http.Request) {
+	// Only listen to POST requests
 	if req.Method != http.MethodPost {
 		res.WriteHeader(http.StatusMethodNotAllowed)
 		writeJSON(res, JSON{
@@ -87,6 +92,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Make sure the user has a session.
 	uuid := req.Header.Get("Authorization")
 	if uuid == "" {
 		res.WriteHeader(http.StatusUnauthorized)
@@ -96,6 +102,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Make sure the user's session is active.
 	session, sessionFound := sessions[uuid]
 	if !sessionFound {
 		res.WriteHeader(http.StatusUnauthorized)
@@ -105,6 +112,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Make sure the data sent is in a JSON format.
 	data := JSON{}
 	err := json.NewDecoder(req.Body).Decode(&data)
 	if err != nil {
@@ -116,19 +124,49 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 	}
 	defer req.Body.Close()
 
+	// Make sure the data sent is in "message"
+	messageRecieved, received := data["message"]
+	if !received {
+		res.WriteHeader(http.StatusBadRequest)
+		writeJSON(res, JSON{
+			"message": "I did not receive a message. Are you sure you sent me something?",
+		})
+		return
+	}
+
+	// If user is not logged in, log them in.
 	_, loggedIn := session["gucID"]
 	if !loggedIn {
-		_, gucIDFound := data["gucID"]
-		_, nameFound := data["name"]
-		if !gucIDFound || !nameFound {
+		// Separate gucID and name
+		login := strings.Split(messageRecieved.(string), ":")
+		if len(login) < 2 {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again.",
 			})
 			return
 		}
-		gucID := data["gucID"].(string)
-		name := data["name"].(string)
+		gucID := login[0]
+		name := login[1]
+		// Check if gucID and name are empty
+		if gucID == "" || name == "" {
+			res.WriteHeader(http.StatusUnauthorized)
+			writeJSON(res, JSON{
+				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again.",
+			})
+			return
+		}
+		// Check if gucId is in a valid format (eg. 13-2456)
+		exp := regexp.MustCompile(`[0-9]+-[0-9]+`)
+		match := exp.MatchString(gucID)
+		if !match {
+			res.WriteHeader(http.StatusUnauthorized)
+			writeJSON(res, JSON{
+				"message": "Your GUC ID is invalid. Are you sure you entered it correctly?",
+			})
+			return
+		}
+		// Find if an old session has the same user. If found, migrate the information from the old session to the new one, and delete the old one.
 		for key1, val1 := range sessions {
 			currentGucID, currentIDFound := val1["gucID"]
 			if currentIDFound && strings.EqualFold(currentGucID.(string), gucID) && uuid != key1 {
@@ -141,27 +179,19 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		session["gucID"] = gucID
 		session["name"] = name
 		writeJSON(res, JSON{
-			"message": "Hello " + name + ". You can view all available carpools, cancel your request, edit your request or choose an available carpool. You can also choose to offer other people a ride by creating a carpool, or specify the details of a carpool you wish to request.",
+			"message": "Hello " + name + ". You can view all available carpools by typing 'view all', cancel your request by typing 'cancel request', edit your request by typing 'edit request' or choose an available carpool by typing 'choose ID' where ID is the postID of the carpool of your choice. You can also choose to offer other people a ride by creating a carpool by typing 'create' or 'offer', or specify the details of a carpool you wish to request by typing 'request', 'find' or 'join'.",
 		})
 		return
 	}
 
-	messageRecieved, received := data["message"]
-	if !received {
-		res.WriteHeader(http.StatusBadRequest)
-		writeJSON(res, JSON{
-			"message": "I did not receive a message. Are you sure you sent me something?",
-		})
-		return
-	}
-
-	// TODO
+	// See if the user wishes to interact with data from the database or edit his session.
 	comparable := strings.ToLower(messageRecieved.(string))
 	if strings.Contains(comparable, "edit") || strings.Contains(comparable, "cancel") || strings.Contains(comparable, "choose") || strings.Contains(comparable, "view all") {
 		postRequestHandler(res, session, data)
 		return
 	}
 
+	// See if user wishes to request or create a carpool.
 	finalResponse, err := processMessage(session, data["message"].(string))
 	if err != nil {
 		res.WriteHeader(http.StatusUnprocessableEntity)
@@ -170,7 +200,6 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-	// END TODO
 
 	writeJSON(res, JSON{
 		"message": finalResponse,
@@ -181,12 +210,12 @@ func processMessage(session Session, message string) (string, error) {
 	requestOrCreate, requestOrCreateFound := session["requestOrCreate"]
 	comparable := strings.ToLower(message)
 	if !requestOrCreateFound {
-		if strings.Contains(comparable, "create") || (strings.Contains(comparable, "offer") && !strings.Contains(comparable, "offered")) {
+		if strings.Contains(comparable, "create") || (strings.Contains(comparable, "offer")) {
 			session["requestOrCreate"] = "create"
-			return "You've chosen to create a carpool. Are you going to the GUC, or are you leaving campus?", nil
+			return "You've chosen to create a carpool. If you are going to the GUC, please type 'to guc', if you are leaving the GUC, please type 'from guc'.", nil
 		} else if strings.Contains(comparable, "request") || strings.Contains(comparable, "find") || strings.Contains(comparable, "join") {
 			session["requestOrCreate"] = "request"
-			return "You've chosen to request a carpool. Are you going to the GUC, or are you leaving campus?", nil
+			return "You've chosen to request a carpool. If you are going to the GUC, please type 'to guc', if you are leaving the GUC, please type 'from guc'.", nil
 		} else {
 			return "", fmt.Errorf("I'm sorry, but you didn't answer my question! Are you offering a ride? Or are you requesting One?")
 		}
@@ -267,14 +296,15 @@ func createCarpoolChat(session Session, message string) (string, error) {
 
 // Function to handle the specifics that the user wants in the carpool he requested.
 func requestCarpoolChat(session Session, message string) (string, error) {
+	// Check if user is going to or leaving the GUC.
 	fromGUC, fromGUCFound := session["fromGUCreq"]
 	comparable := strings.ToLower(message)
 	// Set if the user is going to GUC or leaving.
 	if !fromGUCFound {
-		if strings.Contains(comparable, "going to") {
+		if strings.Contains(comparable, "going to") || strings.Contains(comparable, "to guc") {
 			session["fromGUCreq"] = false
 			return "You've chosen to find a carpool going to the GUC! Where would you like to be picked up from?", nil
-		} else if strings.Contains(comparable, "leaving") {
+		} else if strings.Contains(comparable, "leaving") || strings.Contains(comparable, "from guc") {
 			session["fromGUCreq"] = true
 			return "You chose to leave the campus. Where would you like to go?", nil
 		} else {
@@ -282,6 +312,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		}
 	}
 
+	// Check the location the user wants.
 	_, latitudeFound := session["latitudereq"]
 	_, longitudeFound := session["longitudereq"]
 	// Get the location the user wants to go to.
@@ -311,7 +342,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		session["timereq"] = stTime
 	}
 
-	// The user's request is complete. Set the proper session variable.
+	// The user's request is complete. Set and delete the proper session variables.
 	_, timeFound = session["timereq"]
 	if timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		details := getDetails(session)
@@ -346,6 +377,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		delete(session, "longitudereq")
 		delete(session, "timereq")
 		delete(session, "requestComplete")
+		session["requestOrCreate"] = "request"
 		writeJSON(res, JSON{
 			"message": "You chose to edit your carpool request. Let's do this piece by piece. Firstly, are you going to the GUC, or are you leaving campus?",
 		})
@@ -359,7 +391,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		previousChoice, myChoiceExists := session["myChoice"]
 		if myChoiceExists {
 			delete(session, "myChoice")
-			name := session["name"].(string)
+			gucID := session["gucID"].(string)
 			carpoolRequests, err := DB.GetPostByID(previousChoice.(uint64))
 			if err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
@@ -368,22 +400,28 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 				})
 				return
 			}
+			wasCurrent := false
 			carpoolRequest := carpoolRequests[0]
 			possiblePassengers := carpoolRequest.PossiblePassengers
 			currentPassengers := carpoolRequest.CurrentPassengers
 			for idx, val := range possiblePassengers {
-				if strings.EqualFold(val, name) {
+				if strings.EqualFold(val, gucID) {
 					possiblePassengers = append(possiblePassengers[:idx], possiblePassengers[idx+1:]...)
+					wasCurrent = true
 					break
 				}
 			}
 			for idx, val := range currentPassengers {
-				if strings.EqualFold(val, name) {
+				if strings.EqualFold(val, gucID) {
 					possiblePassengers = append(currentPassengers[:idx], currentPassengers[idx+1:]...)
 					break
 				}
 			}
-			err = DB.UpdateDB(previousChoice.(uint64), carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, carpoolRequest.AvailableSeats, currentPassengers, possiblePassengers)
+			availableSeats := carpoolRequest.AvailableSeats
+			if wasCurrent {
+				availableSeats--
+			}
+			err = DB.UpdateDB(previousChoice.(uint64), carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, availableSeats, currentPassengers, possiblePassengers)
 			if err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
@@ -432,7 +470,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			return
 		}
 		possiblePassengers := carpoolRequest.PossiblePassengers
-		possiblePassengers = append(possiblePassengers, session["name"].(string))
+		possiblePassengers = append(possiblePassengers, session["gucID"].(string))
 		err = DB.UpdateDB(postIDint, carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, carpoolRequest.AvailableSeats, carpoolRequest.CurrentPassengers, possiblePassengers)
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)

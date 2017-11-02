@@ -28,8 +28,8 @@ func TestUpdate(t *testing.T) {
 	//test update code
 	var possiblePass []string
 	var currentPass []string
-	possiblePass = append(possiblePass, "Abdelrahman", "saher")
-	currentPass = append(currentPass, "Ahmed", "Mohamed")
+	possiblePass = append(possiblePass, "34-9791", "34-14269")
+	currentPass = append(currentPass, "31-1111", "34-6141")
 	//non existing post
 	// err := UpdateDB(7, 31, 32, true, 4, currentPass, possiblePass)
 	// if err == nil {
@@ -49,7 +49,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestPassengerInsert(t *testing.T) {
-	passreq, _ := NewPassengerRequest("3-4578", "koko", 2, true)
+	passreq, _ := NewPassengerRequest("3-4578", "koko", 2, 2)
 	InsertPassengerRequest(&passreq)
 }
 
@@ -63,8 +63,8 @@ func TestPassengerQueryONE(t *testing.T) {
 }
 
 func TestUpdatePassenger(t *testing.T) {
-	fmt.Println(UpdatePassengerRequest("4", "wawa", 4, true))
-	fmt.Println(UpdatePassengerRequest("3-4578", "hamada", 2, false))
+	fmt.Println(UpdatePassengerRequest("4", "wawa", 4, 2))
+	fmt.Println(UpdatePassengerRequest("3-4578", "hamada", 2, 1))
 }
 
 func TestRemovePassenger(t *testing.T) {
