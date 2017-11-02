@@ -3,6 +3,7 @@ package DB
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestGetPostByID(t *testing.T) {
@@ -31,14 +32,14 @@ func TestUpdate(t *testing.T) {
 	possiblePass = append(possiblePass, "34-9791", "34-14269")
 	currentPass = append(currentPass, "31-1111", "34-6141")
 	//non existing post
-	// err := UpdateDB(7, 31, 32, true, 4, currentPass, possiblePass)
+	// err := UpdateDB(7, 31, 32, true, 4, currentPass, possiblePass,time.Now())
 	// if err == nil {
 	// 	t.Error("problem")
 	// }
 	s1, err := QueryAll()
 	fmt.Println(s1)
 	//existing post
-	err = UpdateDB(3, 25, 32, false, 3, currentPass, possiblePass)
+	err = UpdateDB(3, 25, 32, false, 3, currentPass, possiblePass, time.Now())
 	if err != nil {
 		fmt.Println(err.Error())
 	}

@@ -1,6 +1,7 @@
 package DB
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -26,7 +27,7 @@ var (
 /////////////////////////////
 
 //UpdateDB : update a carpool post
-func UpdateDB(postid uint64, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int, CurrentPassengers []string, PossiblePassengers []string) error {
+func UpdateDB(postid uint64, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int, CurrentPassengers []string, PossiblePassengers []string, Time time.Time) error {
 	session, err := initDBSession()
 	defer session.Close()
 	if err != nil {
@@ -34,7 +35,7 @@ func UpdateDB(postid uint64, Longitude float64, Latitude float64, FromGUC bool, 
 	}
 	c := session.DB("Carpool").C("CarpoolRequest")
 	colQuerier := bson.M{"_id": postid}
-	change := bson.M{"$set": bson.M{"currentpassengers": CurrentPassengers, "possiblepassengers": PossiblePassengers, "longitude": Longitude, "latitude": Latitude, "fromguc": FromGUC, "availableseats": AvailableSeats, "time": time.Now()}}
+	change := bson.M{"$set": bson.M{"starttime": Time, "currentpassengers": CurrentPassengers, "possiblepassengers": PossiblePassengers, "longitude": Longitude, "latitude": Latitude, "fromguc": FromGUC, "availableseats": AvailableSeats, "time": time.Now()}}
 	err = c.Update(colQuerier, change)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -297,4 +298,35 @@ func initDBSession() (*mgo.Session, error) {
 		}
 	}
 	return session, nil
+}
+
+func AcceptPassenger(GUCID string, PostID uint64) error {
+
+	posts, err := GetPostByID(PostID)
+	if err != nil {
+		return err
+	}
+	possiblepassengers := posts[0].PossiblePassengers
+	currentpassengers := posts[0].CurrentPassengers
+	availableseats := posts[0].AvailableSeats
+
+	passengers, err := GetPassengerRequestByGUCID(GUCID)
+	if err != nil {
+		return err
+	}
+
+	if availableseats == 0 {
+		return errors.New("no seat available")
+	}
+
+	for index := 0; index < len(possiblepassengers); index++ {
+		if possiblepassengers[index] == GUCID {
+			currentpassengers = append(currentpassengers, GUCID)
+			possiblepassengers = append(possiblepassengers[:index], possiblepassengers[index+1:]...)
+			UpdatePassengerRequest(GUCID, passengers[0].Passenger.Name, PostID, 2) //notify
+			UpdateDB(PostID, posts[0].Longitude, posts[0].Latitude, posts[0].FromGUC, availableseats-1, currentpassengers, possiblepassengers, posts[0].Time)
+			return nil
+		}
+	}
+	return errors.New("not a possible passenger")
 }
