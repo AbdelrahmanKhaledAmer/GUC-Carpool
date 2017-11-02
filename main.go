@@ -206,6 +206,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 	})
 }
 
+// This function is used when the user is trying to create or request a carpool. It checks the proper variables, and calls one of two helper functions
 func processMessage(session Session, message string) (string, error) {
 	requestOrCreate, requestOrCreateFound := session["requestOrCreate"]
 	comparable := strings.ToLower(message)
@@ -345,6 +346,11 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 			if duration.Hours() <= 4 {
 				return "", fmt.Errorf("You already have a carpool around that same time! Please choose a different time")
 			}
+		}
+		now := time.Now()
+		valid := (now.Year() <= stTime.Year()) && (now.Month() <= stTime.Month()) && (now.Day() <= stTime.Day()) && (now.Hour() < stTime.Hour())
+		if !valid {
+			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the future")
 		}
 		session["timereq"] = stTime
 	}
