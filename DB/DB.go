@@ -276,10 +276,10 @@ func RejectPassenger(GUCID string, PostID uint64) error {
 	}
 
 	if len(passengerRequests) == 0 {
-		return errors.New("you did not request this carpool")
+		return errors.New("The passenger you're trying to reject did not request a carpool")
 	}
 	if PostID != passengerRequests[0].PostID {
-		return errors.New("you can not accept a passenger that did not request your carpool")
+		return errors.New("You can not reject a passenger that did not request your carpool")
 	}
 
 	passengerRequest := passengerRequests[0]
@@ -310,7 +310,7 @@ func AcceptPassenger(GUCID string, PostID uint64) error {
 		return err
 	}
 	if len(passengers) == 0 {
-		return errors.New("you did not request this carpool")
+		return errors.New("The passenger you're trying to accept did not request your carpool")
 	}
 	if PostID != passengers[0].PostID {
 		return errors.New("you can not accept a passenger that did not request your carpool")
