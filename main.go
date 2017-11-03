@@ -15,6 +15,7 @@ import (
 
 	"github.com/AbdelrahmanKhaledAmer/GUC-Carpool/DB"
 	"github.com/AbdelrahmanKhaledAmer/GUC-Carpool/DirectionsAPI"
+	cors "github.com/heppu/simple-cors"
 )
 
 type (
@@ -30,11 +31,20 @@ var (
 
 // Main function to start the server and handle all incoming routes.
 func main() {
-	http.HandleFunc("/", serveAndLog(serve))
-	http.HandleFunc("/welcome", serveAndLog(startSession))
-	http.HandleFunc("/chat", serveAndLog(handleChat))
+	// http.HandleFunc("/", serveAndLog(serve))
+	// http.HandleFunc("/welcome", )
+	// http.HandleFunc("/chat", )
 	fmt.Print("GUC-Carpool server listening on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	//log.Fatal(http.ListenAndServe(":8080", nil))
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/welcome", serveAndLog(startSession))
+	mux.HandleFunc("/chat", serveAndLog(handleChat))
+	mux.HandleFunc("/", serveAndLog(serve))
+
+	// Start the server
+	log.Fatal(http.ListenAndServe(":8080", cors.CORS(mux)))
+
 }
 
 // Intermediary function that logs the current request and the status code attached to the response.
