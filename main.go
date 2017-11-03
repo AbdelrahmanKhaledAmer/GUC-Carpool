@@ -429,9 +429,12 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			})
 			return
 		}
+		cpString := ""
+		for i := 0; i < len(allRequests); i++ {
+			cpString += allRequests[i].CarpoolToString() + "</br>"
+		}
 		writeJSON(res, JSON{
-			"message": "Here are all the available carpools!",
-			"data":    allRequests,
+			"message": "Here are all the available carpools!</br>" + cpString,
 		})
 		return
 	} else if strings.Contains(comparable, "edit") && strings.Contains(comparable, "request") {
@@ -660,8 +663,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			return
 		}
 		writeJSON(res, JSON{
-			"message": "Here is your carpool details!",
-			"data":    myRequest[0],
+			"message": "Here is your carpool details!</br>" + myRequest[0].CarpoolToString(),
 		})
 		return
 	} else if strings.Contains(comparable, "reject") {
