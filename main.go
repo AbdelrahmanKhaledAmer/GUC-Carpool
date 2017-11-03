@@ -433,8 +433,8 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			return
 		}
 		cpString := ""
-		for i := 0; i < len(allRequests); i++ {
-			cpString += allRequests[i].CarpoolToString() + "</br>"
+		for i := 1; i < len(allRequests); i++ {
+			cpString += allRequests[i].CarpoolToString() + ",</br>"
 		}
 		writeJSON(res, JSON{
 			"message": "Here are all the available carpools!</br>" + cpString,

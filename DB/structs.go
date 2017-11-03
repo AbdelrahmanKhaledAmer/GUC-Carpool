@@ -22,29 +22,29 @@ type CarpoolRequest struct {
 
 // CarpoolToString : Take a Carpool Request as a subject and returns a string describing it.
 func (c *CarpoolRequest) CarpoolToString() string {
-	str := "{ PostID: " + strconv.FormatUint(c.PostID, 10)
-	str += ",</br> Name: " + c.Name
-	str += ",</br> GUCID: " + c.GUCID
-	str += ",</br> FromGUC: " + strconv.FormatBool(c.FromGUC)
-	str += ",</br> Latitude: " + strconv.FormatFloat(c.Latitude, 'f', -1, 64)
-	str += ",</br> Longitude: " + strconv.FormatFloat(c.Longitude, 'f', -1, 64)
-	str += ",</br> Start Time: " + c.StartTime.Format("Jan 2, 2006 at 3:04pm (EET)")
-	str += ",</br> Available Seats: " + strconv.FormatInt(int64(c.AvailableSeats), 10)
-	str += ",</br> Current Passengers: [ "
+	str := "{</br>&emsp;PostID: " + strconv.FormatUint(c.PostID, 10)
+	str += ",</br>&emsp;Name: " + c.Name
+	str += ",</br>&emsp;GUCID: " + c.GUCID
+	str += ",</br>&emsp;FromGUC: " + strconv.FormatBool(c.FromGUC)
+	str += ",</br>&emsp;Latitude: " + strconv.FormatFloat(c.Latitude, 'f', -1, 64)
+	str += ",</br>&emsp;Longitude: " + strconv.FormatFloat(c.Longitude, 'f', -1, 64)
+	str += ",</br>&emsp;Start Time: " + c.StartTime.Format("Jan 2, 2006 at 3:04pm (EET)")
+	str += ",</br>&emsp;Available Seats: " + strconv.FormatInt(int64(c.AvailableSeats), 10)
+	str += ",</br>&emsp;Current Passengers: [ "
 	for i := 0; i < len(c.CurrentPassengers); i++ {
 		str += c.CurrentPassengers[i]
 		if i != (len(c.CurrentPassengers) - 1) {
 			str += ", "
 		}
 	}
-	str += " ],</br> Possible Passengers: [ "
+	str += " ],</br>&emsp;Possible Passengers: [ "
 	for i := 0; i < len(c.PossiblePassengers); i++ {
 		str += c.PossiblePassengers[i]
 		if i != (len(c.PossiblePassengers) - 1) {
 			str += ", "
 		}
 	}
-	str += " ] }"
+	str += " ]</br>}"
 	return str
 }
 
