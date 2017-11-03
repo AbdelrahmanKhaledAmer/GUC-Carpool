@@ -753,6 +753,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 // Function to write out a JSON response.
 func writeJSON(res http.ResponseWriter, data JSON) {
 	res.Header().Set("Content-Type", "application/json")
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(res).Encode(data)
 }
 
