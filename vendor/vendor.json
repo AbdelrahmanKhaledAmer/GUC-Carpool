@@ -9,6 +9,12 @@
 			"revisionTime": "2017-06-08T20:18:08Z"
 		},
 		{
+			"checksumSHA1": "ZpmIsVbs9VRiZ8ZMwxxTPyW1ZpM=",
+			"path": "github.com/heppu/simple-cors",
+			"revision": "0fcde90b1493492935885d754ed54c4e4a402618",
+			"revisionTime": "2016-10-23T13:53:12Z"
+		},
+		{
 			"checksumSHA1": "AmmgTEwqZWUYx61PmJbXWNwiHrc=",
 			"origin": "vendor/github.com/night-codes/mgo-ai",
 			"path": "github.com/night-codes/mgo-ai",
@@ -74,5 +80,5 @@
 			"revisionTime": "2016-08-18T02:01:20Z"
 		}
 	],
-	"rootPath": "github.com/AbdelrahmanKhaledAmer/GUC-Carpool"
+	"rootPath": "vendor/github.com/AbdelrahmanKhaledAmer/GUC-Carpool"
 }
