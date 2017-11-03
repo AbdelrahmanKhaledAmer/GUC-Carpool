@@ -9,6 +9,12 @@
 			"revisionTime": "2017-06-08T20:18:08Z"
 		},
 		{
+			"checksumSHA1": "66FySld60ai7A8X83tqwih+Iguc=",
+			"path": "github.com/heppu/simple-cors",
+			"revision": "543cdec07e0c196abd48c5d966c0a0684cc47308",
+			"revisionTime": "2017-03-13T07:41:01Z"
+		},
+		{
 			"checksumSHA1": "AmmgTEwqZWUYx61PmJbXWNwiHrc=",
 			"origin": "vendor/github.com/night-codes/mgo-ai",
 			"path": "github.com/night-codes/mgo-ai",
