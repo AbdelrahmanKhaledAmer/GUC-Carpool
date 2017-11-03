@@ -325,15 +325,18 @@ func createCarpoolChat(session Session, message string) (string, error) {
 				return "", fmt.Errorf("An error occured when creating your carpool. Please try again later")
 			}
 			//insert that new carpool into the database
-			DB.InsertDB(&C)
-			session["createComplete"] = false
+			err = DB.InsertDB(&C)
+			if err != nil {
+				return "", fmt.Errorf("An error occured while inserting into the database. Error: " + err.Error())
+			}
+			session["createComplete"] = true
 			session["postID"] = C.PostID
 			session["currentPassengers"] = C.CurrentPassengers
 			session["possiblePassengers"] = C.PossiblePassengers
 		} else {
-			k := DB.UpdateDB(session["postID"].(uint64), session["longitude"].(float64), session["latitude"].(float64), session["fromGUC"].(bool), session["availableSeats"].(int), session["currentPassengers"].([]string), session["possiblePassengers"].([]string), stTime.(time.Time))
-			if k != nil {
-				return "", fmt.Errorf("An error occured when creating your carpool. Please try again later")
+			err := DB.UpdateDB(session["postID"].(uint64), session["longitude"].(float64), session["latitude"].(float64), session["fromGUC"].(bool), session["availableSeats"].(int), session["currentPassengers"].([]string), session["possiblePassengers"].([]string), stTime.(time.Time))
+			if err != nil {
+				return "", fmt.Errorf("An error occured when creating your carpool. Please try again later Error: " + err.Error())
 			}
 		}
 		delete(session, "requestOrCreate")
@@ -425,7 +428,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
-				"message": "There was an error while retrieving the data from our database. Please try again in a moment.",
+				"message": "There was an error while retrieving the data from our database. Error: " + err.Error(),
 			})
 			return
 		}
@@ -469,7 +472,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			if err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
-					"message": "There was an error while retrieving the data from our database. Please try again in a moment.",
+					"message": "There was an error while retrieving the data from our database. Error: " + err.Error(),
 				})
 				return
 			}
@@ -498,7 +501,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			if err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
-					"message": "There was an error removing you from the carpool. Try again later.",
+					"message": "There was an error removing you from the carpool. Error: " + err.Error(),
 				})
 				return
 			}
@@ -506,7 +509,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			if err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
-					"message": "There was an error while retrieving the data from our database. Please try again in a moment.",
+					"message": "There was an error while retrieving the data from our database. Error: " + err.Error(),
 				})
 				return
 			}
@@ -522,7 +525,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			if err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
-					"message": "I can't update your information in our database. Please try again in a moment.",
+					"message": "I can't update your information in our database. Error: " + err.Error(),
 				})
 				return
 			}
@@ -555,7 +558,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
-				"message": "There was an error while creating your information. Please try again later.",
+				"message": "There was an error while creating your information. Error: " + err.Error(),
 			})
 			return
 		}
@@ -563,7 +566,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
-				"message": "There was an error while saving your information. Please try again later.",
+				"message": "There was an error while saving your information. Error: " + err.Error(),
 			})
 			return
 		}
@@ -571,7 +574,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
-				"message": "There was an error while retrieving the data from our database. Please try again in a moment.",
+				"message": "There was an error while retrieving the data from our database. Error: " + err.Error(),
 			})
 			return
 		}
@@ -589,7 +592,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
-				"message": "There was an error updating. Try again later.",
+				"message": "There was an error updating. Error: " + err.Error(),
 			})
 			return
 		}
@@ -621,7 +624,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
-				"message": err.Error(),
+				"message": "There was an error deleting the carpool from our database." + err.Error(),
 			})
 			return
 		}
@@ -658,7 +661,14 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
-				"message": err.Error(),
+				"message": "Could not get the carpool request. Error: " + err.Error(),
+			})
+			return
+		}
+		if len(myRequest) == 0 {
+			res.WriteHeader(http.StatusNotFound)
+			writeJSON(res, JSON{
+				"message": "There seem to be no requests in our databse matching yours.",
 			})
 			return
 		}
@@ -687,7 +697,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusUnprocessableEntity)
 			writeJSON(res, JSON{
-				"message": err.Error(),
+				"message": "There was an error in rejection this passenger. Error: " + err.Error(),
 			})
 			return
 		}
@@ -709,7 +719,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusUnprocessableEntity)
 			writeJSON(res, JSON{
-				"message": err.Error(),
+				"message": "There was an error in acception this passenger. Error: " + err.Error(),
 			})
 			return
 		}
@@ -730,7 +740,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			if err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
-					"message": "An error occured while recieving the directions. Please try again later.",
+					"message": "An error occured while recieving the directions. Error: " + err.Error(),
 				})
 			}
 			writeJSON(res, JSON{
@@ -742,7 +752,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
-				"message": "An error occured while recieving the directions. Please try again later.",
+				"message": "An error occured while recieving the directions. Error: " + err.Error(),
 			})
 		}
 		writeJSON(res, JSON{

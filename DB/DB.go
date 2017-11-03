@@ -20,7 +20,7 @@ you should go get these packages first
 
 var (
 	//IsDrop show the status of DB
-	IsDrop = true
+	IsDrop = false
 )
 
 //CarpoolRequest begin
@@ -32,7 +32,7 @@ func UpdateDB(postid uint64, Longitude float64, Latitude float64, FromGUC bool, 
 	if err != nil {
 		return err
 	}
-	c := session.DB("Carpool").C("CarpoolRequest")
+	c := session.DB("carpool").C("CarpoolRequest")
 	colQuerier := bson.M{"_id": postid}
 	change := bson.M{"$set": bson.M{"starttime": Time, "currentpassengers": CurrentPassengers, "possiblepassengers": PossiblePassengers, "longitude": Longitude, "latitude": Latitude, "fromguc": FromGUC, "availableseats": AvailableSeats, "time": time.Now()}}
 	err = c.Update(colQuerier, change)
@@ -54,7 +54,7 @@ func QueryAll() ([]CarpoolRequest, error) { //TODO should be renamed with the pa
 		return nil, err
 	}
 
-	c := session.DB("Carpool").C("CarpoolRequest")
+	c := session.DB("carpool").C("CarpoolRequest")
 	var results []CarpoolRequest
 	err = c.Find(bson.M{}).All(&results) //c.Find(bson.M{"name": "Ahmed"}).All(&results) for filtering
 	if err != nil {
@@ -71,7 +71,7 @@ func GetPostByID(PostID uint64) ([]CarpoolRequest, error) {
 		return nil, err
 	}
 
-	c := session.DB("Carpool").C("CarpoolRequest")
+	c := session.DB("carpool").C("CarpoolRequest")
 	var results []CarpoolRequest
 	err = c.Find(bson.M{"_id": PostID}).All(&results) //c.Find(bson.M{"name": "Ahmed"}).All(&results) for filtering
 	if err != nil {
@@ -89,7 +89,7 @@ func InsertDB(req *CarpoolRequest) error {
 		return err
 	}
 
-	c := session.DB("Carpool").C("CarpoolRequest")
+	c := session.DB("carpool").C("CarpoolRequest")
 
 	//auto incr
 	ai.Connect(c)
@@ -113,7 +113,7 @@ func DeleteDB(PostID uint64) error {
 		return err
 	}
 
-	c := session.DB("Carpool").C("CarpoolRequest")
+	c := session.DB("carpool").C("CarpoolRequest")
 
 	err = c.Remove(bson.M{"_id": PostID})
 	if err != nil {
@@ -139,7 +139,7 @@ func UpdatePassengerRequest(GUCID string, Name string, PostID uint64, Notify uin
 		return err
 	}
 	pass, _ := NewPassenger(GUCID, Name)
-	c := session.DB("Carpool").C("PassengerRequest")
+	c := session.DB("carpool").C("PassengerRequest")
 	colQuerier := bson.M{"passenger.gucid": GUCID}
 	change := bson.M{"$set": bson.M{"passenger": pass, "postid": PostID, "notify": Notify}}
 	err = c.Update(colQuerier, change)
@@ -161,7 +161,7 @@ func QueryAllPassengerRequests() ([]PassengerRequest, error) { //TODO should be 
 		return nil, err
 	}
 
-	c := session.DB("Carpool").C("PassengerRequest")
+	c := session.DB("carpool").C("PassengerRequest")
 	var results []PassengerRequest
 	err = c.Find(bson.M{}).All(&results) //c.Find(bson.M{"name": "Ahmed"}).All(&results) for filtering
 	if err != nil {
@@ -178,7 +178,7 @@ func GetPassengerRequestByGUCID(GUCID string) ([]PassengerRequest, error) {
 		return nil, err
 	}
 
-	c := session.DB("Carpool").C("PassengerRequest")
+	c := session.DB("carpool").C("PassengerRequest")
 	var results []PassengerRequest
 	err = c.Find(bson.M{"passenger.gucid": GUCID}).All(&results) //c.Find(bson.M{"name": "Ahmed"}).All(&results) for filtering
 	if err != nil {
@@ -196,7 +196,7 @@ func InsertPassengerRequest(req *PassengerRequest) error {
 		return err
 	}
 
-	c := session.DB("Carpool").C("PassengerRequest")
+	c := session.DB("carpool").C("PassengerRequest")
 
 	err = c.Insert(req)
 	if err != nil {
@@ -216,7 +216,7 @@ func DeletePassengerRequest(GUCID string) error {
 		return err
 	}
 
-	c := session.DB("Carpool").C("PassengerRequest")
+	c := session.DB("carpool").C("PassengerRequest")
 
 	err = c.Remove(bson.M{"passenger.gucid": GUCID})
 	if err != nil {
@@ -327,14 +327,16 @@ func AcceptPassenger(GUCID string, PostID uint64) error {
 //Passenger request functions end
 
 func initDBSession() (*mgo.Session, error) {
-	session, err := mgo.Dial("127.0.0.1")
+	uri := "mongodb://carpool:carpool@ds245715.mlab.com:45715/carpool"
+	session, err := mgo.Dial(uri)
 	if err != nil {
 		return nil, err
 	}
 	session.SetMode(mgo.Monotonic, true)
+	session.SetSafe(&mgo.Safe{})
 	// Drop Database
 	if IsDrop {
-		err = session.DB("gucCarpool").DropDatabase()
+		err = session.DB("carpool").DropDatabase()
 		if err != nil {
 			return nil, err
 		}
