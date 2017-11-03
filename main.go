@@ -36,6 +36,9 @@ func main() {
 	// http.HandleFunc("/welcome", )
 	// http.HandleFunc("/chat", )
 	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	fmt.Print("GUC-Carpool server listening on port " + port)
 	//log.Fatal(http.ListenAndServe(":8080", nil))
 
