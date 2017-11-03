@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -34,7 +35,8 @@ func main() {
 	// http.HandleFunc("/", serveAndLog(serve))
 	// http.HandleFunc("/welcome", )
 	// http.HandleFunc("/chat", )
-	fmt.Print("GUC-Carpool server listening on port 8080")
+	port := os.Getenv("PORT")
+	fmt.Print("GUC-Carpool server listening on port " + port)
 	//log.Fatal(http.ListenAndServe(":8080", nil))
 
 	mux := http.NewServeMux()
@@ -43,7 +45,7 @@ func main() {
 	mux.HandleFunc("/", serveAndLog(serve))
 
 	// Start the server
-	log.Fatal(http.ListenAndServe(":8080", cors.CORS(mux)))
+	log.Fatal(http.ListenAndServe(":"+port, cors.CORS(mux)))
 
 }
 
