@@ -50,10 +50,10 @@ func UpdateDB(postid uint64, Longitude float64, Latitude float64, FromGUC bool, 
 //QueryAll return all the requests in the DB
 func QueryAll() ([]CarpoolRequest, error) { //TODO should be renamed with the package name
 	session, err := initDBSession()
-	defer session.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer session.Close()
 
 	c := session.DB("Carpool").C("CarpoolRequest")
 	var results []CarpoolRequest
