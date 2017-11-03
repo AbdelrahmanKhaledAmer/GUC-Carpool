@@ -29,7 +29,6 @@ var (
 //UpdateDB : update a carpool post
 func UpdateDB(postid uint64, Longitude float64, Latitude float64, FromGUC bool, AvailableSeats int, CurrentPassengers []string, PossiblePassengers []string, Time time.Time) error {
 	session, err := initDBSession()
-	defer session.Close()
 	if err != nil {
 		return err
 	}
@@ -44,6 +43,7 @@ func UpdateDB(postid uint64, Longitude float64, Latitude float64, FromGUC bool, 
 		return err
 	}
 	fmt.Println("update succ")
+	defer session.Close()
 	return nil
 }
 
@@ -53,7 +53,6 @@ func QueryAll() ([]CarpoolRequest, error) { //TODO should be renamed with the pa
 	if err != nil {
 		return nil, err
 	}
-	defer session.Close()
 
 	c := session.DB("Carpool").C("CarpoolRequest")
 	var results []CarpoolRequest
@@ -61,14 +60,13 @@ func QueryAll() ([]CarpoolRequest, error) { //TODO should be renamed with the pa
 	if err != nil {
 		return nil, err
 	}
-
+	defer session.Close()
 	return results, nil
 }
 
 // GetPostByID : return 1 post matching specific ID
 func GetPostByID(PostID uint64) ([]CarpoolRequest, error) {
 	session, err := initDBSession()
-	defer session.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -79,16 +77,14 @@ func GetPostByID(PostID uint64) ([]CarpoolRequest, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	defer session.Close()
 	return results, nil
-
 }
 
 //InsertDB insert func
 func InsertDB(req *CarpoolRequest) error {
 
 	session, err := initDBSession()
-	defer session.Close()
 	if err != nil {
 		return err
 	}
@@ -105,6 +101,7 @@ func InsertDB(req *CarpoolRequest) error {
 		return err
 	}
 	fmt.Println("insertion succ")
+	defer session.Close()
 	return nil
 }
 
@@ -112,7 +109,6 @@ func InsertDB(req *CarpoolRequest) error {
 func DeleteDB(PostID uint64) error {
 
 	session, err := initDBSession()
-	defer session.Close()
 	if err != nil {
 		return err
 	}
@@ -124,6 +120,7 @@ func DeleteDB(PostID uint64) error {
 		fmt.Printf("remove fail %v\n", err)
 		return err
 	}
+	defer session.Close()
 	return nil
 }
 
@@ -138,7 +135,6 @@ func DeleteDB(PostID uint64) error {
 //UpdatePassengerRequest : update passenger
 func UpdatePassengerRequest(GUCID string, Name string, PostID uint64, Notify uint8) error {
 	session, err := initDBSession()
-	defer session.Close()
 	if err != nil {
 		return err
 	}
@@ -154,13 +150,13 @@ func UpdatePassengerRequest(GUCID string, Name string, PostID uint64, Notify uin
 		return err
 	}
 	fmt.Println(" passenger update succ")
+	defer session.Close()
 	return nil
 }
 
 //QueryAllPassengerRequests return all the requests in the DB
 func QueryAllPassengerRequests() ([]PassengerRequest, error) { //TODO should be renamed with the package name
 	session, err := initDBSession()
-	defer session.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -171,15 +167,13 @@ func QueryAllPassengerRequests() ([]PassengerRequest, error) { //TODO should be 
 	if err != nil {
 		return nil, err
 	}
-
+	defer session.Close()
 	return results, nil
-
 }
 
 // GetPassengerRequestByGUCID : return 1 passenger matching specific ID
 func GetPassengerRequestByGUCID(GUCID string) ([]PassengerRequest, error) {
 	session, err := initDBSession()
-	defer session.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -190,16 +184,14 @@ func GetPassengerRequestByGUCID(GUCID string) ([]PassengerRequest, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	defer session.Close()
 	return results, nil
-
 }
 
 //InsertPassengerRequest insert func
 func InsertPassengerRequest(req *PassengerRequest) error {
 
 	session, err := initDBSession()
-	defer session.Close()
 	if err != nil {
 		return err
 	}
@@ -213,14 +205,13 @@ func InsertPassengerRequest(req *PassengerRequest) error {
 
 	}
 	fmt.Println("insertion succ")
+	defer session.Close()
 	return nil
 }
 
 //DeletePassengerRequest : Delete passengerrequest
 func DeletePassengerRequest(GUCID string) error {
-
 	session, err := initDBSession()
-	defer session.Close()
 	if err != nil {
 		return err
 	}
@@ -232,6 +223,7 @@ func DeletePassengerRequest(GUCID string) error {
 		fmt.Printf("remove passenger fail %v\n", err)
 		return err
 	}
+	defer session.Close()
 	return nil
 }
 
