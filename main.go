@@ -62,13 +62,13 @@ func serve(res http.ResponseWriter, req *http.Request) {
 // Function that creates the session variable and attaches a uuid (Unique user ID) to it.
 func startSession(res http.ResponseWriter, req *http.Request) {
 	// Only listen to GET requests.
-	if req.Method != http.MethodGet {
-		res.WriteHeader(http.StatusMethodNotAllowed)
-		writeJSON(res, JSON{
-			"message": "I'm sorry, but you didn't send any proper data with that " + req.Method + " request. I can only listen to GET requests on this route.",
-		})
-		return
-	}
+	// if req.Method != http.MethodGet {
+	// 	res.WriteHeader(http.StatusMethodNotAllowed)
+	// 	writeJSON(res, JSON{
+	// 		"message": "I'm sorry, but you didn't send any proper data with that " + req.Method + " request. I can only listen to GET requests on this route.",
+	// 	})
+	// 	return
+	// }
 
 	// Create a new uuid
 	hasher := md5.New()
