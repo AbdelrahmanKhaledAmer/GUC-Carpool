@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jinzhu/now"
+
 	"github.com/AbdelrahmanKhaledAmer/GUC-Carpool/DB"
 	"github.com/AbdelrahmanKhaledAmer/GUC-Carpool/DirectionsAPI"
 	cors "github.com/heppu/simple-cors"
@@ -314,7 +316,7 @@ func createCarpoolChat(session Session, message string) (string, error) {
 	requestTime, requestTimeFound := session["timereq"]
 	stTime, timeFound := session["time"]
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
-		stTime, err := time.Parse("Jan 2, 2006 at 3:04pm (EET)", message)
+		stTime, err := now.Parse(message)
 		if err != nil {
 			return "", fmt.Errorf("An error occured when parsing the time. Can you please tell me again when you want your ride to be?")
 		}
@@ -414,7 +416,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 	createTime, createTimeFound := session["time"]
 	_, timeFound := session["timereq"]
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
-		stTime, err := time.Parse("Jan 2, 2006 at 3:04pm (EET)", message)
+		stTime, err := now.Parse(message)
 		if err != nil {
 			return "", fmt.Errorf("An error occured when parsing the time. Can you please tell me again when you want your ride to be?")
 		}
@@ -768,6 +770,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 				writeJSON(res, JSON{
 					"message": "An error occured while recieving the directions. Error: " + err.Error(),
 				})
+				return
 			}
 			writeJSON(res, JSON{
 				"message": directions,
@@ -780,6 +783,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			writeJSON(res, JSON{
 				"message": "An error occured while recieving the directions. Error: " + err.Error(),
 			})
+			return
 		}
 		writeJSON(res, JSON{
 			"message": directions,
