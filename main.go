@@ -45,6 +45,8 @@ func main() {
 	fmt.Print("GUC-Carpool server listening on port " + port)
 	//log.Fatal(http.ListenAndServe(":8080", nil))
 
+	now.TimeFormats = append(now.TimeFormats, "02 Jan 2006 15:04", "5/11/2017 8.30 AM", "nov 5,2017 at 8.30 AM")
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/welcome", serveAndLog(startSession))
 	mux.HandleFunc("/chat", serveAndLog(handleChat))
@@ -287,6 +289,10 @@ func processMessage(session Session, message string) (string, error) {
 	comparable := strings.ToLower(message)
 	if !requestOrCreateFound {
 		if strings.Contains(comparable, "create") || (strings.Contains(comparable, "offer")) {
+			_, postFound := session["postID"]
+			if postFound {
+				return "you already have a carpool I have a very good memory I can remember thing you know :P ", nil
+			}
 			session["requestOrCreate"] = "create"
 			return "You've chosen to create a carpool. If you are going to the GUC, please type 'to guc', if you are leaving the GUC, please type 'from guc'.", nil
 		} else if strings.Contains(comparable, "request") || strings.Contains(comparable, "find") || strings.Contains(comparable, "join") {
@@ -402,7 +408,7 @@ func createCarpoolChat(session Session, message string) (string, error) {
 		return "You've chosen to take up to " + strconv.FormatInt(number0, 10) + " more passengers. Your carpool is now complete! You can see it by typing 'view carpool'.", nil
 	}
 
-	return "", fmt.Errorf("Whoops! An error occured in your session. Can you please log out and log back in again?")
+	return "I did not understand what u said I am only a computer after all ", nil
 }
 
 // Function to handle the specifics that the user wants in the carpool he requested.
@@ -449,7 +455,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		stTime, err := now.Parse(message)
 		if err != nil {
-			return "", fmt.Errorf("not a valid time format. Can you please tell me again when you want your ride to be?")
+			return "", fmt.Errorf("not a valid time format. Can you please tell me again when you want your ride to be? enter time like 5/11/2017 8.30 AM")
 		}
 		if createTimeFound {
 			duration := stTime.Sub(createTime.(time.Time))
@@ -474,7 +480,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		return "Your request is complete! Here are the details: " + details + " You can now view the most suitable carpools, view all carpools, cancel your request, edit your request or choose one of the available carpools. So, what do you want to do?", nil
 	}
 
-	return "", fmt.Errorf("looks like you have a carpool already you can edit it if you want")
+	return "looks like you have a carpool already you can edit it if you want", nil
 }
 
 func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
