@@ -189,7 +189,7 @@ func GetPassengerRequestByGUCID(GUCID string) ([]PassengerRequest, error) {
 }
 
 // GetPassengerRequestsByPostID : return all passengers matching specific postID
-func GetPassengerRequestsByPostID(postID string) ([]PassengerRequest, error) {
+func GetPassengerRequestsByPostID(postID uint64) ([]PassengerRequest, error) {
 	session, err := initDBSession()
 	if err != nil {
 		return nil, err
@@ -292,7 +292,7 @@ func RejectPassenger(GUCID string, PostID uint64) error {
 	}
 
 	passengerRequest := passengerRequests[0]
-	err = UpdatePassengerRequest(passengerRequest.Passenger.GUCID, passengerRequest.Passenger.Name, passengerRequest.PostID, 0)
+	err = UpdatePassengerRequest(passengerRequest.Passenger.GUCID, passengerRequest.Passenger.Name, passengerRequest.PostID, 0) //notify
 	if err != nil {
 		return err
 	}
