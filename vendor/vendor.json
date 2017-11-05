@@ -15,6 +15,12 @@
 			"revisionTime": "2017-03-13T07:41:01Z"
 		},
 		{
+			"checksumSHA1": "FsX08FYGCGbiN81y42u/7dQ0a8I=",
+			"path": "github.com/jinzhu/now",
+			"revision": "d939ba741945c047cac69c329c5fb0d6b4a06520",
+			"revisionTime": "2017-02-12T11:26:55Z"
+		},
+		{
 			"checksumSHA1": "AmmgTEwqZWUYx61PmJbXWNwiHrc=",
 			"origin": "vendor/github.com/night-codes/mgo-ai",
 			"path": "github.com/night-codes/mgo-ai",

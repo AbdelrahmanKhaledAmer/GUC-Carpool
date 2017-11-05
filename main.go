@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -96,7 +97,7 @@ func startSession(res http.ResponseWriter, req *http.Request) {
 	sessions[uuid] = Session{}
 	writeJSON(res, JSON{
 		"uuid":    uuid,
-		"message": "Welocme to GUC Carpool! Please log in using your GUC-ID and name separated by the delimiter ':'. Make sure to do this first on the '/chat' route.",
+		"message": "Welcome to GUC Carpool! Please tell me your GUC-ID and name separated by':'.",
 	})
 }
 
@@ -116,7 +117,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 	if uuid == "" {
 		res.WriteHeader(http.StatusUnauthorized)
 		writeJSON(res, JSON{
-			"message": "I'm sorry, but you don't seem to be logged in. Please log in and try again.",
+			"message": "I'm sorry, but it seems that I forgot who yo are in. Please log in and try again.",
 		})
 		return
 	}
@@ -161,7 +162,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		if len(login) < 2 {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again.",
+				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again. it is so easy you just write them :D",
 			})
 			return
 		}
@@ -171,7 +172,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		if gucID == "" || name == "" {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again.",
+				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again. I can not infere this Info but when I grow up I may ",
 			})
 			return
 		}
@@ -181,7 +182,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		if !match {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "Your GUC ID is invalid. Are you sure you entered it correctly?",
+				"message": "Your GUC ID is invalid. Are you sure you entered it correctly? type it correctly or I will keep anoying you with this message",
 			})
 			return
 		}
@@ -283,7 +284,7 @@ func processMessage(session Session, message string) (string, error) {
 			session["requestOrCreate"] = "request"
 			return "You've chosen to request a carpool. If you are going to the GUC, please type 'to guc', if you are leaving the GUC, please type 'from guc'.", nil
 		} else {
-			return "", fmt.Errorf("I'm sorry, but you didn't answer my question! Are you offering a ride? Or are you requesting One?")
+			return "", fmt.Errorf("I'm sorry, but you didn't answer my question! Are you offering a ride? Or are you requesting One?,I am not busy I can do this all day")
 		}
 	} else {
 		if requestOrCreate == "create" {
@@ -338,18 +339,19 @@ func createCarpoolChat(session Session, message string) (string, error) {
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		stTime, err := now.Parse(message)
 		if err != nil {
-			return "", fmt.Errorf("An error occured when parsing the time. Can you please tell me again when you want your ride to be?")
+			return "", fmt.Errorf("this is not a valid time format. Can you please tell me again when you want your ride to be?")
 		}
 		if requestTimeFound {
 			duration := stTime.Sub(requestTime.(time.Time))
-			if duration.Hours() <= 4 {
-				return "", fmt.Errorf("You already have a carpool around that same time! Please choose a different time")
+			if math.Abs(duration.Hours()) <= 4 {
+
+				return "", fmt.Errorf("You already have a carpool around that same time! did you forget, Please choose a different time")
 			}
 		}
 		now := time.Now()
 		valid := stTime.After(now)
 		if !valid {
-			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the future")
+			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the future I am not that dumb you know")
 		}
 		session["time"] = stTime
 		return "You want your ride to take place around " + (session["time"].(time.Time)).Format("Jan 2, 2006 at 3:04pm (EET)") + ". How many passengers can you take with you?", nil
@@ -438,18 +440,18 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		stTime, err := now.Parse(message)
 		if err != nil {
-			return "", fmt.Errorf("An error occured when parsing the time. Can you please tell me again when you want your ride to be?")
+			return "", fmt.Errorf("not a valid time format. Can you please tell me again when you want your ride to be?")
 		}
 		if createTimeFound {
 			duration := stTime.Sub(createTime.(time.Time))
-			if duration.Hours() <= 4 {
+			if math.Abs(duration.Hours()) <= 4 {
 				return "", fmt.Errorf("You already have a carpool around that same time! Please choose a different time")
 			}
 		}
 		now := time.Now()
 		valid := stTime.After(now)
 		if !valid {
-			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the future")
+			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the future I do not have a time machine.")
 		}
 		session["timereq"] = stTime
 	}
@@ -484,6 +486,12 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		for i := 1; i < len(allRequests); i++ {
 			cpString += allRequests[i].CarpoolToString() + ",</br>"
 		}
+		if len(allRequests) < 2 {
+			writeJSON(res, JSON{
+				"message": "ops no current carpool offers available looks like you will be walking :P",
+			})
+			return
+		}
 		writeJSON(res, JSON{
 			"message": "Here are all the available carpools!</br>" + cpString,
 		})
@@ -496,7 +504,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if !requestExists {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "You can't edit a request if you don't have one.",
+				"message": "You can't edit a request if you don't have one.I am starting to doubt your inteligence",
 			})
 			return
 		}
@@ -588,7 +596,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if myChoiceExists {
 			res.WriteHeader(http.StatusForbidden)
 			writeJSON(res, JSON{
-				"message": "You already chose a carpool. Please cancel before choosing a new one.",
+				"message": "You already chose a carpool. Please cancel before choosing a new one.you can have only one carpool running at a time",
 			})
 			return
 		}
@@ -646,7 +654,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		session["myChoice"] = postIDint
 		writeJSON(res, JSON{
-			"message": "You've successfully chosen a carpool! Now you have to wait for the original poster to accept your request.",
+			"message": "You've successfully chosen a carpool! Now you have to wait for the original poster to accept your request.ps He may not ",
 		})
 		return
 	} else if strings.Contains(comparable, "delete") && strings.Contains(comparable, "carpool") {
