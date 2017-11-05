@@ -74,7 +74,7 @@ func TestRemovePassenger(t *testing.T) {
 }
 
 func TestAcceptPassenger(t *testing.T) {
-	fmt.Println(AcceptPassenger("34-9791", 1))
+	fmt.Println(AcceptPassenger("34-111", 1))
 }
 
 func TestInsert(t *testing.T) {
@@ -92,4 +92,16 @@ func TestInsert(t *testing.T) {
 
 func TestRejectPassenger(t *testing.T) {
 	fmt.Println(RejectPassenger("34-6141", 1))
+}
+
+func TestDBInsertGUCID(t *testing.T) {
+	v1, _ := GetPassengerRequestByGUCID("34-111")
+	fmt.Println(v1[0].Notify)
+
+}
+
+func TestDBIgepostid(t *testing.T) {
+	v1, _ := GetPassengerRequestsByPostID(1)
+	fmt.Println(v1[0].Notify)
+
 }

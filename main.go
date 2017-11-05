@@ -474,7 +474,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		return "Your request is complete! Here are the details: " + details + " You can now view the most suitable carpools, view all carpools, cancel your request, edit your request or choose one of the available carpools. So, what do you want to do?", nil
 	}
 
-	return "", fmt.Errorf("looks like you have a carpool already you can edit it if you won't")
+	return "", fmt.Errorf("looks like you have a carpool already you can edit it if you want")
 }
 
 func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
@@ -626,22 +626,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			})
 			return
 		}
-		myDetails, err := DB.NewPassengerRequest(session["gucID"].(string), session["name"].(string), postIDint, 1)
-		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
-			writeJSON(res, JSON{
-				"message": "There was an error while creating your information. Error: " + err.Error(),
-			})
-			return
-		}
-		err = DB.InsertPassengerRequest(&myDetails)
-		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
-			writeJSON(res, JSON{
-				"message": "There was an error while saving your information. Error: " + err.Error(),
-			})
-			return
-		}
+
 		carpoolRequests, err := DB.GetPostByID(postIDint)
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
@@ -650,6 +635,31 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			})
 			return
 		}
+		if len(carpoolRequests) < 1 {
+			writeJSON(res, JSON{
+				"message": "not a valid post ID. I will say it was a typo!",
+			})
+			return
+		}
+		myDetails, err := DB.NewPassengerRequest(session["gucID"].(string), session["name"].(string), postIDint, 1)
+		if err != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			writeJSON(res, JSON{
+				"message": "There was an error while creating your information. Error: " + err.Error(),
+			})
+			return
+		}
+
+		//insert after check
+		err = DB.InsertPassengerRequest(&myDetails)
+		if err != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			writeJSON(res, JSON{
+				"message": "There was an error while saving your information. Error: " + err.Error(),
+			})
+			return
+		}
+
 		carpoolRequest := carpoolRequests[0]
 		if strings.EqualFold(carpoolRequest.GUCID, session["gucID"].(string)) {
 			res.WriteHeader(http.StatusForbidden)
@@ -844,14 +854,13 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 // Function to get notification from databse.
 func getNotifications(session Session) (string, error) {
 	//should be called only whesession Sessionn gucid is set
-
 	notificationString := ""
 	passengerRequests, err := DB.GetPassengerRequestByGUCID(session["gucID"].(string))
 	if err != nil {
 
 		return "", fmt.Errorf("error")
 	}
-	if len(passengerRequests) > 1 {
+	if len(passengerRequests) > 0 {
 		passengerRequest := passengerRequests[0]
 		if passengerRequest.Notify == 0 { //Rejected
 			notificationString += "-I'm sorry, but your last carpool request couldn't be made.You can joining another one.-"
@@ -869,7 +878,7 @@ func getNotifications(session Session) (string, error) {
 			}
 
 		} else if passengerRequest.Notify == 2 { //Accepted
-			notificationString += "-You're request has been accepted! You can now ride in the carpool with id = " + session["myChoice"].(string) + "-"
+			notificationString += "-Your request has been accepted! have fun-"
 
 		}
 	}
@@ -881,12 +890,15 @@ func getNotifications(session Session) (string, error) {
 
 			return "", fmt.Errorf("error")
 		}
+		fmt.Println(session["postID"])
 		fmt.Println(len(passengerRequests))
 		if len(passengerRequests) > 0 {
 			for i := 0; i < len(passengerRequests); i++ {
 				currentPassenger := passengerRequests[i]
 				if currentPassenger.Notify == 3 {
-					notificationString += "-The passenger with ID " + currentPassenger.Passenger.GUCID + "and name " + currentPassenger.Passenger.Name + " has cancelled his request. You can accept another one in their place.-"
+					notificationString += "-The passenger with ID " + currentPassenger.Passenger.GUCID + " and name " + currentPassenger.Passenger.Name + " has cancelled his request. You can accept another one in their place.-"
+					//remove him from db
+					DB.DeletePassengerRequest(currentPassenger.Passenger.GUCID)
 				}
 			}
 		}
@@ -900,7 +912,6 @@ func getNotifications(session Session) (string, error) {
 			}
 		}
 	}
-
 	if notificationString == "" {
 		return "-There are no new notifications-", nil
 	}

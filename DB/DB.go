@@ -197,10 +197,11 @@ func GetPassengerRequestsByPostID(postID uint64) ([]PassengerRequest, error) {
 
 	c := session.DB("carpool").C("PassengerRequest")
 	var results []PassengerRequest
-	err = c.Find(bson.M{"passenger.postid": postID}).All(&results) //c.Find(bson.M{"name": "Ahmed"}).All(&results) for filtering
+	err = c.Find(bson.M{"postid": postID}).All(&results) //c.Find(bson.M{"name": "Ahmed"}).All(&results) for filtering
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(results)
 	defer session.Close()
 	return results, nil
 }
