@@ -45,7 +45,7 @@ func main() {
 	fmt.Print("GUC-Carpool server listening on port " + port)
 	//log.Fatal(http.ListenAndServe(":8080", nil))
 
-	now.TimeFormats = append(now.TimeFormats, "02 Jan 2006 15:04", "5/11/2017 8.30 AM", "nov 5,2017 at 8.30 AM")
+	now.TimeFormats = append(now.TimeFormats, "02 Jan 2006 15:04", "5/11/2017 8.30", "nov 5,2017 at 8.30")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/welcome", serveAndLog(startSession))
@@ -659,6 +659,14 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			return
 		}
 
+		carpoolRequest := carpoolRequests[0]
+		if strings.EqualFold(carpoolRequest.GUCID, session["gucID"].(string)) {
+			res.WriteHeader(http.StatusForbidden)
+			writeJSON(res, JSON{
+				"message": "You can't join your own carpool!",
+			})
+			return
+		}
 		//insert after check
 		err = DB.InsertPassengerRequest(&myDetails)
 		if err != nil {
@@ -669,14 +677,6 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			return
 		}
 
-		carpoolRequest := carpoolRequests[0]
-		if strings.EqualFold(carpoolRequest.GUCID, session["gucID"].(string)) {
-			res.WriteHeader(http.StatusForbidden)
-			writeJSON(res, JSON{
-				"message": "You can't join your own carpool!",
-			})
-			return
-		}
 		possiblePassengers := carpoolRequest.PossiblePassengers
 		possiblePassengers = append(possiblePassengers, session["gucID"].(string))
 		err = DB.UpdateDB(postIDint, carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, carpoolRequest.AvailableSeats, carpoolRequest.CurrentPassengers, possiblePassengers, carpoolRequest.StartTime)
