@@ -228,7 +228,7 @@ func InsertPassengerRequest(req *PassengerRequest) error {
 }
 
 //DeletePassengerRequest : Delete passengerrequest
-func DeletePassengerRequest(GUCID string) error {
+func DeletePassengerRequest(PostID uint64, GUCID string) error {
 	session, err := initDBSession()
 	if err != nil {
 		return err
@@ -236,7 +236,7 @@ func DeletePassengerRequest(GUCID string) error {
 
 	c := session.DB("carpool").C("PassengerRequest")
 
-	err = c.Remove(bson.M{"passenger.gucid": GUCID})
+	err = c.Remove(bson.M{"passenger.gucid": GUCID, "postid": PostID})
 	if err != nil {
 		fmt.Printf("remove passenger fail %v\n", err)
 		return err
@@ -325,7 +325,9 @@ func AcceptPassenger(GUCID string, PostID uint64) error {
 	if PostID != passengers[0].PostID {
 		return errors.New("you can not accept a passenger that did not request your carpool")
 	}
-
+	if passengers[0].Notify == 3 {
+		return errors.New(" This passenger has cancelled his request. ")
+	}
 	if availableseats == 0 {
 		return errors.New("no seat available")
 	}

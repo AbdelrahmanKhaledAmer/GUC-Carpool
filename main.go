@@ -537,6 +537,8 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		delete(session, "requestComplete")
 		delete(session, "requestOrCreate")
 		previousChoice, myChoiceExists := session["myChoice"]
+		delete(session, "myChoice")
+
 		if myChoiceExists {
 			gucID := session["gucID"].(string)
 			carpoolRequests, err := DB.GetPostByID(previousChoice.(uint64))
@@ -548,13 +550,15 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 				return
 			}
 
-			////////////////////////////////////////
-			//Abdelrahman check this
-			///////////////////////////////////////
-
 			wasCurrent := false
+			if len(carpoolRequests) == 0 {
+				res.WriteHeader(http.StatusInternalServerError)
+				writeJSON(res, JSON{
+					"message": "no post exist with this ID " + err.Error(),
+				})
+				return
+			}
 
-			/////////////////////////////check if carpoolRequests has a size 0 or 1 only we exclude the first 1
 			carpoolRequest := carpoolRequests[0]
 			possiblePassengers := carpoolRequest.PossiblePassengers
 			currentPassengers := carpoolRequest.CurrentPassengers
@@ -608,7 +612,6 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 				return
 			}
 		}
-		delete(session, "myChoice")
 		writeJSON(res, JSON{
 			"message": "Your carpool request has been cancelled successfully. You can now start over. Do you want to request a carpool, or are you offering one?",
 		})
@@ -877,11 +880,11 @@ func getNotifications(session Session) (string, error) {
 			delete(session, "timereq")
 			delete(session, "requestComplete")
 			delete(session, "requestOrCreate")
-			err = DB.DeletePassengerRequest(session["gucID"].(string))
+			err = DB.DeletePassengerRequest(session["myChoice"].(uint64), session["gucID"].(string))
 			if err != nil {
-
 				return "", fmt.Errorf("error")
 			}
+			delete(session, "myChoice")
 
 		} else if passengerRequest.Notify == 2 { //Accepted
 			notificationString += "-Your request has been accepted! have fun-"
@@ -904,7 +907,7 @@ func getNotifications(session Session) (string, error) {
 				if currentPassenger.Notify == 3 {
 					notificationString += "-The passenger with ID " + currentPassenger.Passenger.GUCID + " and name " + currentPassenger.Passenger.Name + " has cancelled his request. You can accept another one in their place.-"
 					//remove him from db
-					DB.DeletePassengerRequest(currentPassenger.Passenger.GUCID)
+					DB.DeletePassengerRequest(postID.(uint64), currentPassenger.Passenger.GUCID)
 				}
 			}
 		}

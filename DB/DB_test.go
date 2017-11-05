@@ -69,8 +69,8 @@ func TestUpdatePassenger(t *testing.T) {
 }
 
 func TestRemovePassenger(t *testing.T) {
-	fmt.Println(DeletePassengerRequest("4"))
-	fmt.Println(DeletePassengerRequest("3-4578"))
+	fmt.Println(DeletePassengerRequest(1, "34-14269 "))
+	//fmt.Println(DeletePassengerRequest("3-4578"))
 }
 
 func TestAcceptPassenger(t *testing.T) {
@@ -95,9 +95,8 @@ func TestRejectPassenger(t *testing.T) {
 }
 
 func TestDBInsertGUCID(t *testing.T) {
-	v1, _ := GetPassengerRequestByGUCID("34-111")
+	v1, _ := GetPassengerRequestByGUCID("34-14269 ")
 	fmt.Println(v1[0].Notify)
-
 }
 
 func TestDBIgepostid(t *testing.T) {
