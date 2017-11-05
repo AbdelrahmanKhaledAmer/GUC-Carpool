@@ -79,13 +79,13 @@ func serve(res http.ResponseWriter, req *http.Request) {
 // Function that creates the session variable and attaches a uuid (Unique user ID) to it.
 func startSession(res http.ResponseWriter, req *http.Request) {
 	// Only listen to GET requests.
-	// if req.Method != http.MethodGet {
-	// 	res.WriteHeader(http.StatusMethodNotAllowed)
-	// 	writeJSON(res, JSON{
-	// 		"message": "I'm sorry, but you didn't send any proper data with that " + req.Method + " request. I can only listen to GET requests on this route.",
-	// 	})
-	// 	return
-	// }
+	if req.Method != http.MethodGet {
+		res.WriteHeader(http.StatusMethodNotAllowed)
+		writeJSON(res, JSON{
+			"message": "I'm sorry, but you didn't send any proper data with that " + req.Method + " request. I can only listen to GET requests on this route.",
+		})
+		return
+	}
 
 	// Create a new uuid
 	hasher := md5.New()
@@ -203,7 +203,8 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		// If no old session is found, check if user has a previous carpool
 		if !oldSession {
 			carpoolRequests, err := DB.QueryAll()
-			if err != nil {
+			passengerRequests, err2 := DB.QueryAllPassengerRequests()
+			if err != nil || err2 != nil {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
 					"message": "There was an error in getting your data from the database. Error: " + err.Error(),
@@ -220,6 +221,12 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 					session["availableSeats"] = currentCarpool.AvailableSeats
 					session["createComplete"] = true
 					session["postID"] = currentCarpool.PostID
+				}
+			}
+			for i := 0; i < len(passengerRequests); i++ {
+				currentPassenger := passengerRequests[i]
+				if strings.EqualFold(currentPassenger.Passenger.GUCID, gucID) {
+					session["myChoice"] = currentPassenger.PostID
 				}
 			}
 		}
