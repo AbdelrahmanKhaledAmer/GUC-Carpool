@@ -183,6 +183,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 			})
 			return
 		}
+		oldSession := false
 		// Find if an old session has the same user. If found, migrate the information from the old session to the new one, and delete the old one.
 		for key1, val1 := range sessions {
 			currentGucID, currentIDFound := val1["gucID"]
@@ -191,10 +192,35 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 					session[key2] = val2
 				}
 				delete(sessions, key1)
+				oldSession = true
+				break
 			}
 		}
 		session["gucID"] = gucID
 		session["name"] = name
+		// If no old session is found, check if user has a previous carpool
+		if !oldSession {
+			carpoolRequests, err := DB.QueryAll()
+			if err != nil {
+				res.WriteHeader(http.StatusInternalServerError)
+				writeJSON(res, JSON{
+					"message": "There was an error in getting your data from the database. Error: " + err.Error(),
+				})
+				return
+			}
+			for i := 0; i < len(carpoolRequests); i++ {
+				currentCarpool := carpoolRequests[i]
+				if strings.EqualFold(currentCarpool.GUCID, gucID) {
+					session["fromGUC"] = currentCarpool.FromGUC
+					session["latitude"] = currentCarpool.Latitude
+					session["longitude"] = currentCarpool.Longitude
+					session["time"] = currentCarpool.Time
+					session["availableSeats"] = currentCarpool.AvailableSeats
+					session["createComplete"] = true
+					session["postID"] = currentCarpool.PostID
+				}
+			}
+		}
 		writeJSON(res, JSON{
 			"message": "Hello " + name + ". You can view all available carpools by typing 'view all', cancel your request by typing 'cancel request', edit your request by typing 'edit request' or choose an available carpool by typing 'choose ID' where ID is the postID of the carpool of your choice. You can also choose to offer other people a ride by creating a carpool by typing 'create' or 'offer', or specify the details of a carpool you wish to request by typing 'request', 'find' or 'join'.",
 		})
@@ -607,6 +633,9 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		delete(session, "longitude")
 		delete(session, "time")
 		delete(session, "availableSeats")
+		delete(session, "createComplete")
+		delete(session, "requestOrCreate")
+		delete(session, "postID")
 		if !createFound {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
@@ -628,9 +657,6 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			})
 			return
 		}
-		delete(session, "createComplete")
-		delete(session, "requestOrCreate")
-		delete(session, "postID")
 		writeJSON(res, JSON{
 			"message": "You chose to delete your carpool. Now you can create or request a carpool.",
 		})
