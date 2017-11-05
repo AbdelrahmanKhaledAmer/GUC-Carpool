@@ -241,7 +241,14 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 	_, carpoolRequestFound := session["postID"]
 	_, passengerRequestFound := session["myChoice"]
 	if (carpoolRequestFound || passengerRequestFound) && (strings.Contains(comparable, "notifications") || strings.Contains(comparable, "notify")) {
-		getNotifications(res, session)
+		notifications, err := getNotifications(res, session)
+		if err != nil {
+			return
+		}
+		writeJSON(res, JSON{
+			"message": notifications,
+		})
+		return
 	}
 
 	if strings.Contains(comparable, "edit") || strings.Contains(comparable, "cancel") || strings.Contains(comparable, "choose") || (strings.Contains(comparable, "view") && (strings.Contains(comparable, "all") || strings.Contains(comparable, "carpool"))) || strings.Contains(comparable, "delete") || strings.Contains(comparable, "reject") || strings.Contains(comparable, "accept") || strings.Contains(comparable, "directions") {
