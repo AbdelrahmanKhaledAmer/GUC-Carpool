@@ -231,14 +231,36 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 				}
 			}
 		}
+
+		responseMessage := "Hello " + name + ". You can view all available carpools by typing 'view all', cancel your request by typing 'cancel request', edit your request by typing 'edit request' or choose an available carpool by typing 'choose ID' where ID is the postID of the carpool of your choice. You can also choose to offer other people a ride by creating a carpool by typing 'create' or 'offer', or specify the details of a carpool you wish to request by typing 'request', 'find' or 'join'."
+		// responseNotify, err := getNotifications(session)
+		// if err != nil {
+		// 	responseNotify = "can not retrive your notifications right now  "
+		// }
 		writeJSON(res, JSON{
-			"message": "Hello " + name + ". You can view all available carpools by typing 'view all', cancel your request by typing 'cancel request', edit your request by typing 'edit request' or choose an available carpool by typing 'choose ID' where ID is the postID of the carpool of your choice. You can also choose to offer other people a ride by creating a carpool by typing 'create' or 'offer', or specify the details of a carpool you wish to request by typing 'request', 'find' or 'join'.",
+			"message": responseMessage,
 		})
 		return
 	}
 
 	// See if the user wishes to interact with data from the database or edit his session.
 	comparable := strings.ToLower(messageRecieved.(string))
+	_, carpoolRequestFound := session["postID"]
+	_, passengerRequestFound := session["myChoice"]
+	if (carpoolRequestFound || passengerRequestFound) && (strings.Contains(comparable, "notifications") || strings.Contains(comparable, "notify")) {
+		notifications, err := getNotifications(session)
+		if err != nil {
+			writeJSON(res, JSON{
+				"message": "can not retrive your notifications, try again later",
+			})
+			return
+		}
+		writeJSON(res, JSON{
+			"message": notifications,
+		})
+		return
+	}
+
 	if strings.Contains(comparable, "edit") || strings.Contains(comparable, "cancel") || strings.Contains(comparable, "choose") || (strings.Contains(comparable, "view") && (strings.Contains(comparable, "all") || strings.Contains(comparable, "carpool"))) || strings.Contains(comparable, "delete") || strings.Contains(comparable, "reject") || strings.Contains(comparable, "accept") || strings.Contains(comparable, "directions") {
 		postRequestHandler(res, session, data)
 		return
@@ -438,7 +460,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		now := time.Now()
 		valid := stTime.After(now)
 		if !valid {
-			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the future I do not have a time machine.")
+			return "", fmt.Errorf(" This time doesn't make sense! You need to choose a time in the future I do not have a time machine. ")
 		}
 		session["timereq"] = stTime
 	}
@@ -452,7 +474,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		return "Your request is complete! Here are the details: " + details + " You can now view the most suitable carpools, view all carpools, cancel your request, edit your request or choose one of the available carpools. So, what do you want to do?", nil
 	}
 
-	return "", fmt.Errorf("Whoops! An error occured in your session. Can you please log out and log back in again?")
+	return "", fmt.Errorf("looks like you have a carpool already you can edit it if you won't")
 }
 
 func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
@@ -519,7 +541,14 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 				})
 				return
 			}
+
+			////////////////////////////////////////
+			//Abdelrahman check this
+			///////////////////////////////////////
+
 			wasCurrent := false
+
+			/////////////////////////////check if carpoolRequests has a size 0 or 1 only we exclude the first 1
 			carpoolRequest := carpoolRequests[0]
 			possiblePassengers := carpoolRequest.PossiblePassengers
 			currentPassengers := carpoolRequest.CurrentPassengers
@@ -796,7 +825,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
-				"message": "An error occured while recieving the directions. Error: " + err.Error(),
+				"message": "An error occured while recieving the directions. the location you entered can not be found",
 			})
 			return
 		}
@@ -810,6 +839,72 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		"message": "I did not understand what you said. Would you like to view all the available carpools,  cancel your request, edit your request or choose an available carpool?",
 	})
 	return
+}
+
+// Function to get notification from databse.
+func getNotifications(session Session) (string, error) {
+	//should be called only whesession Sessionn gucid is set
+
+	notificationString := ""
+	passengerRequests, err := DB.GetPassengerRequestByGUCID(session["gucID"].(string))
+	if err != nil {
+
+		return "", fmt.Errorf("error")
+	}
+	if len(passengerRequests) > 1 {
+		passengerRequest := passengerRequests[0]
+		if passengerRequest.Notify == 0 { //Rejected
+			notificationString += "-I'm sorry, but your last carpool request couldn't be made.You can joining another one.-"
+			// remove from session with this guc mail and DB
+			delete(session, "fromGUCreq")
+			delete(session, "latitudereq")
+			delete(session, "longitudereq")
+			delete(session, "timereq")
+			delete(session, "requestComplete")
+			delete(session, "requestOrCreate")
+			err = DB.DeletePassengerRequest(session["gucID"].(string))
+			if err != nil {
+
+				return "", fmt.Errorf("error")
+			}
+
+		} else if passengerRequest.Notify == 2 { //Accepted
+			notificationString += "-You're request has been accepted! You can now ride in the carpool with id = " + session["myChoice"].(string) + "-"
+
+		}
+	}
+
+	postID, postIDExists := session["postID"]
+	if postIDExists == true {
+		passengerRequests, err = DB.GetPassengerRequestsByPostID(postID.(uint64))
+		if err != nil {
+
+			return "", fmt.Errorf("error")
+		}
+		fmt.Println(len(passengerRequests))
+		if len(passengerRequests) > 0 {
+			for i := 0; i < len(passengerRequests); i++ {
+				currentPassenger := passengerRequests[i]
+				if currentPassenger.Notify == 3 {
+					notificationString += "-The passenger with ID " + currentPassenger.Passenger.GUCID + "and name " + currentPassenger.Passenger.Name + " has cancelled his request. You can accept another one in their place.-"
+				}
+			}
+		}
+
+		CarpoolPost, err := DB.GetPostByID(session["postID"].(uint64))
+		if err == nil {
+			//no problem
+			possiblePassengers := CarpoolPost[0].PossiblePassengers
+			for i := 0; i < len(possiblePassengers); i++ {
+				notificationString += "-The passenger with ID " + possiblePassengers[i] + " wants to ride with you-"
+			}
+		}
+	}
+
+	if notificationString == "" {
+		return "-There are no new notifications-", nil
+	}
+	return notificationString, nil
 }
 
 // Function to write out a JSON response.
