@@ -236,6 +236,12 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 
 	// See if the user wishes to interact with data from the database or edit his session.
 	comparable := strings.ToLower(messageRecieved.(string))
+	_, carpoolRequestFound := session["postID"]
+	_, passengerRequestFound := session["myChoice"]
+	if (carpoolRequestFound || passengerRequestFound) && (strings.Contains(comparable, "notifications") || strings.Contains(comparable, "notify")) {
+		getNotifications(res, session)
+	}
+
 	if strings.Contains(comparable, "edit") || strings.Contains(comparable, "cancel") || strings.Contains(comparable, "choose") || (strings.Contains(comparable, "view") && (strings.Contains(comparable, "all") || strings.Contains(comparable, "carpool"))) || strings.Contains(comparable, "delete") || strings.Contains(comparable, "reject") || strings.Contains(comparable, "accept") || strings.Contains(comparable, "directions") {
 		postRequestHandler(res, session, data)
 		return
@@ -798,6 +804,46 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		"message": "I did not understand what you said. Would you like to view all the available carpools,  cancel your request, edit your request or choose an available carpool?",
 	})
 	return
+}
+
+// Function to get notification from databse.
+func getNotifications(res http.ResponseWriter, session Session) (string, error) {
+	notificationString := ""
+	passengerRequests, err := DB.GetPassengerRequestByGUCID(session["gucID"].(string))
+	if err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+		writeJSON(res, JSON{
+			"message": "There was an error retrieving the notifications! Please try again later.",
+		})
+		return "", fmt.Errorf("error")
+	}
+	passengerRequest := passengerRequests[0]
+	if passengerRequest.Notify == 0 { //Rejected
+		notificationString += "-I'm sorry, but your carpool request couldn't be made. Please try joining another one.-"
+	} else if passengerRequest.Notify == 2 { //Accepted
+		notificationString += "-You're request has been accepted! You can noe ride in the carpool with id = " + session["myChoice"].(string) + "-"
+	}
+	postID, postIDExists := session["postID"]
+	if postIDExists {
+		passengerRequests, err = DB.GetPassengerRequestsByPostID(postID.(string))
+		if err != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			writeJSON(res, JSON{
+				"message": "There was an error retrieving the notifications! Please try again later.",
+			})
+			return "", fmt.Errorf("error")
+		}
+		for i := 0; i < len(passengerRequests); i++ {
+			currentPassenger := passengerRequests[i]
+			if currentPassenger.Notify == 3 {
+				notificationString += "-The passenger with ID " + currentPassenger.Passenger.GUCID + " has cancelled his request. You can accept another one in their place.-"
+			}
+		}
+	}
+	if notificationString == "" {
+		return "-There are no new notifications-", nil
+	}
+	return notificationString, nil
 }
 
 // Function to write out a JSON response.

@@ -188,6 +188,23 @@ func GetPassengerRequestByGUCID(GUCID string) ([]PassengerRequest, error) {
 	return results, nil
 }
 
+// GetPassengerRequestsByPostID : return all passengers matching specific postID
+func GetPassengerRequestsByPostID(postID string) ([]PassengerRequest, error) {
+	session, err := initDBSession()
+	if err != nil {
+		return nil, err
+	}
+
+	c := session.DB("carpool").C("PassengerRequest")
+	var results []PassengerRequest
+	err = c.Find(bson.M{"passenger.postid": postID}).All(&results) //c.Find(bson.M{"name": "Ahmed"}).All(&results) for filtering
+	if err != nil {
+		return nil, err
+	}
+	defer session.Close()
+	return results, nil
+}
+
 //InsertPassengerRequest insert func
 func InsertPassengerRequest(req *PassengerRequest) error {
 
