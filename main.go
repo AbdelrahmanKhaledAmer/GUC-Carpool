@@ -247,9 +247,9 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 
 	// See if the user wishes to interact with data from the database or edit his session.
 	comparable := strings.ToLower(messageRecieved.(string))
-	_, carpoolRequestFound := session["postID"]
-	_, passengerRequestFound := session["myChoice"]
-	if (carpoolRequestFound || passengerRequestFound) && (strings.Contains(comparable, "notifications") || strings.Contains(comparable, "notify")) {
+	//_, carpoolRequestFound := session["postID"]
+	//_, passengerRequestFound := session["myChoice"]
+	if /*(carpoolRequestFound || passengerRequestFound) &&*/ strings.Contains(comparable, "notifications") || strings.Contains(comparable, "notify") {
 		notifications, err := getNotifications(session)
 		if err != nil {
 			writeJSON(res, JSON{
