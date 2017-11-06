@@ -537,7 +537,6 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		delete(session, "requestComplete")
 		delete(session, "requestOrCreate")
 		previousChoice, myChoiceExists := session["myChoice"]
-		delete(session, "myChoice")
 
 		if myChoiceExists {
 			gucID := session["gucID"].(string)
@@ -549,6 +548,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 				})
 				return
 			}
+			delete(session, "myChoice")
 
 			wasCurrent := false
 			if len(carpoolRequests) == 0 {
