@@ -859,15 +859,13 @@ func getNotifications(session Session) (string, error) {
 	for index := 0; index < len(passengerRequests); index++ {
 		passengerRequest := passengerRequests[index]
 		if passengerRequest.Notify == 0 { //Rejected
-			notificationString += "-I'm sorry, but your last carpool request couldn't be made.You can joining another one.-"
+			notificationString += "-I'm sorry, but your last carpool request couldn't be made. You can join another one.-"
 			// remove from session with this guc mail and DB
-
 			err = DB.DeletePassengerRequest(passengerRequest.PostID, session["gucID"].(string))
 			if err != nil {
 				return "", fmt.Errorf("error")
 			}
 			delete(session, "myChoice")
-
 		} else if passengerRequest.Notify == 2 { //Accepted
 			notificationString += "-Your request has been accepted! have fun-"
 		}
