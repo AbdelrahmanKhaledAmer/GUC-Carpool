@@ -711,6 +711,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			writeJSON(res, JSON{
 				"message": "You cannot delete a carpool if you've never created one.",
 			})
+			return
 		}
 		if !postIDExists {
 			res.WriteHeader(http.StatusUnauthorized)
