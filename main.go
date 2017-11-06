@@ -35,15 +35,11 @@ var (
 
 // Main function to start the server and handle all incoming routes.
 func main() {
-	// http.HandleFunc("/", serveAndLog(serve))
-	// http.HandleFunc("/welcome", )
-	// http.HandleFunc("/chat", )
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	fmt.Print("GUC-Carpool server listening on port " + port)
-	//log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("GUC-Carpool server listening on port " + port)
 
 	now.TimeFormats = append(now.TimeFormats, "02 Jan 2006 15:04", "5/11/2017 8.30", "nov 5,2017 at 8.30")
 
@@ -99,7 +95,7 @@ func startSession(res http.ResponseWriter, req *http.Request) {
 	sessions[uuid] = Session{}
 	writeJSON(res, JSON{
 		"uuid":    uuid,
-		"message": "Welcome to GUC Carpool! Please tell me your GUC-ID and name separated by':'.",
+		"message": "Welcome to GUC Carpool! Please tell me your GUC-ID and name separated by ':'.",
 	})
 }
 
@@ -164,7 +160,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		if len(login) < 2 {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again. it is so easy you just write them :D",
+				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again.(ex. '12-3456:MyName') It is so easy you just write them :D",
 			})
 			return
 		}
@@ -174,7 +170,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		if gucID == "" || name == "" {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again. I can not infere this Info but when I grow up I may ",
+				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again. I can not infer this Info but when I grow up I may. (ex. '12-3456:MyName')",
 			})
 			return
 		}
@@ -184,7 +180,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		if !match {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "Your GUC ID is invalid. Are you sure you entered it correctly? type it correctly or I will keep anoying you with this message",
+				"message": "Your GUC ID is invalid. Are you sure you entered it correctly? type it correctly or I will keep anoying you with this message. (ex. '12-3456')",
 			})
 			return
 		}
@@ -234,7 +230,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 			}
 		}
 
-		responseMessage := "Hello " + name + ". You can view all available carpools by typing 'view all', cancel your request by typing 'cancel request', edit your request by typing 'edit request' or choose an available carpool by typing 'choose ID' where ID is the postID of the carpool of your choice. You can also choose to offer other people a ride by creating a carpool by typing 'create' or 'offer', or specify the details of a carpool you wish to request by typing 'request', 'find' or 'join'."
+		responseMessage := "Hello " + name + ". You can view all available carpools by typing 'view all', or 'view carpool' to view one you already have, cancel your request by typing 'cancel request', edit your request by typing 'edit request' or choose an available carpool by typing 'choose ID' where ID is the postID of the carpool of your choice. You can also choose to offer other people a ride by creating a carpool by typing 'create', or specify the details of a carpool you wish to request by typing 'request'."
 		// responseNotify, err := getNotifications(session)
 		// if err != nil {
 		// 	responseNotify = "can not retrive your notifications right now  "
@@ -253,7 +249,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		notifications, err := getNotifications(session)
 		if err != nil {
 			writeJSON(res, JSON{
-				"message": "can not retrive your notifications, try again later",
+				"message": "I could not retrieve your notifications at the moment, please try again later.",
 			})
 			return
 		}
@@ -291,15 +287,15 @@ func processMessage(session Session, message string) (string, error) {
 		if strings.Contains(comparable, "create") || (strings.Contains(comparable, "offer")) {
 			_, postFound := session["postID"]
 			if postFound {
-				return "you already have a carpool I have a very good memory I can remember thing you know :P ", nil
+				return "You already have a carpool! I have a very good memory, I can remember things you know :P. ", nil
 			}
 			session["requestOrCreate"] = "create"
-			return "You've chosen to create a carpool. If you are going to the GUC, please type 'to guc', if you are leaving the GUC, please type 'from guc'.", nil
+			return "You've chosen to create a carpool. Are you going to the GUC, or are you leaving the GUC?", nil
 		} else if strings.Contains(comparable, "request") || strings.Contains(comparable, "find") || strings.Contains(comparable, "join") {
 			session["requestOrCreate"] = "request"
-			return "You've chosen to request a carpool. If you are going to the GUC, please type 'to guc', if you are leaving the GUC, please type 'from guc'.", nil
+			return "You've chosen to request a carpool. Are you going to the GUC, or are you leaving the GUC?", nil
 		} else {
-			return "", fmt.Errorf("I'm sorry, but you didn't answer my question! Are you offering a ride? Or are you requesting One?,I am not busy I can do this all day")
+			return "", fmt.Errorf("I'm sorry, but you didn't answer my question! Are you offering a ride? Or are you requesting One? I am not busy I can do this all day. type 'create' to make a carpool or 'request' to make a request")
 		}
 	} else {
 		if requestOrCreate == "create" {
@@ -307,7 +303,7 @@ func processMessage(session Session, message string) (string, error) {
 		} else if requestOrCreate == "request" {
 			return requestCarpoolChat(session, message)
 		} else {
-			return "", fmt.Errorf("Whoops! An error occured in your session. Can you please log out and log back in again?")
+			return "", fmt.Errorf("I don't seem to understand what your message '" + comparable + "' means. Can you please clarify?")
 		}
 	}
 }
@@ -325,7 +321,7 @@ func createCarpoolChat(session Session, message string) (string, error) {
 			session["fromGUC"] = true
 			return "You've chosen to create a carpool that's leaving the GUC. Where are you going? please enter your latitude and longitude", nil
 		} else {
-			return "I'm sorry you didn't answer my question. Are you going to the GUC or leaving the GUC?", nil
+			return "I'm sorry you didn't answer my question. Are you going to the GUC or leaving the GUC? (ex. if you're leaving you can type 'from guc' or if you're going to campus you can type 'to guc'.", nil
 		}
 	}
 
@@ -345,7 +341,7 @@ func createCarpoolChat(session Session, message string) (string, error) {
 		} else {
 			response = "Where can you pick up people?"
 		}
-		return "", fmt.Errorf("I'm sorry, but you didn't answer my question! " + response)
+		return "", fmt.Errorf("I'm sorry, but you didn't answer my question! " + response + " Please enter the latitude and longitude like this 'latitude 30.08 longitude 31.33'")
 	}
 
 	//take his start time
@@ -354,19 +350,19 @@ func createCarpoolChat(session Session, message string) (string, error) {
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		stTime, err := now.Parse(message)
 		if err != nil {
-			return "", fmt.Errorf("this is not a valid time format. Can you please tell me again when you want your ride to be?")
+			return "", fmt.Errorf("This is not a valid time format. Can you please tell me again when you want your ride to be? One possible format you can use is 'yyyy-mm-dd hh:mm'")
 		}
 		if requestTimeFound {
 			duration := stTime.Sub(requestTime.(time.Time))
 			if math.Abs(duration.Hours()) <= 4 {
 
-				return "", fmt.Errorf("You already have a carpool around that same time! did you forget, Please choose a different time")
+				return "", fmt.Errorf("You already have a carpool around that same time! Did you forget? Please choose a different time")
 			}
 		}
 		now := time.Now()
 		valid := stTime.After(now)
 		if !valid {
-			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the future I am not that dumb you know")
+			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the future. I am not that dumb you know")
 		}
 		session["time"] = stTime
 		return "You want your ride to take place around " + (session["time"].(time.Time)).Format("Jan 2, 2006 at 3:04pm (EET)") + ". How many passengers can you take with you?", nil
@@ -408,7 +404,7 @@ func createCarpoolChat(session Session, message string) (string, error) {
 		return "You've chosen to take up to " + strconv.FormatInt(number0, 10) + " more passengers. Your carpool is now complete! You can see it by typing 'view carpool'.", nil
 	}
 
-	return "I did not understand what u said I am only a computer after all ", nil
+	return "I did not understand what you said. I am only a computer after all.", nil
 }
 
 // Function to handle the specifics that the user wants in the carpool he requested.
@@ -420,12 +416,12 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 	if !fromGUCFound {
 		if strings.Contains(comparable, "going to") || strings.Contains(comparable, "to guc") {
 			session["fromGUCreq"] = false
-			return "You've chosen to find a carpool going to the GUC! Where would you like to be picked up from?", nil
+			return "You've chosen to find a carpool going to the GUC! Where would you like to be picked up from? Please eneter a latitude and longitude.", nil
 		} else if strings.Contains(comparable, "leaving") || strings.Contains(comparable, "from guc") {
 			session["fromGUCreq"] = true
-			return "You chose to leave the campus. Where would you like to go?", nil
+			return "You chose to leave the campus. Where would you like to go? Please enter a latitude and longitude.", nil
 		} else {
-			return "", fmt.Errorf("I'm sorry, but you didn't answer my question! Are you going to the GUC? Or are you leaving campus?")
+			return "I'm sorry you didn't answer my question. Are you going to the GUC or leaving the GUC? (ex. if you're leaving you can type 'from guc' or if you're going to campus you can type 'to guc'.", nil
 		}
 	}
 
@@ -446,7 +442,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		} else {
 			ret = "Where would you like to be picked up from?"
 		}
-		return "", fmt.Errorf("I'm sorry, but you didn't answer my question! " + ret)
+		return "", fmt.Errorf("I'm sorry, but you didn't answer my question! " + ret + " Please enter the latitude and longitude like this 'latitude 30.08 longitude 31.33'")
 	}
 
 	// Get the time the user wants to leave.
@@ -455,18 +451,18 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		stTime, err := now.Parse(message)
 		if err != nil {
-			return "", fmt.Errorf("not a valid time format. Can you please tell me again when you want your ride to be? enter time like 5/11/2017 8.30 AM")
+			return "", fmt.Errorf("This is not a valid time format. Can you please tell me again when you want your ride to be? One possible format you can use is 'yyyy-mm-dd hh:mm'")
 		}
 		if createTimeFound {
 			duration := stTime.Sub(createTime.(time.Time))
 			if math.Abs(duration.Hours()) <= 4 {
-				return "", fmt.Errorf("You already have a carpool around that same time! Please choose a different time")
+				return "", fmt.Errorf("You already have a carpool around that same time! You can't be in two places at once! Please choose a different time")
 			}
 		}
 		now := time.Now()
 		valid := stTime.After(now)
 		if !valid {
-			return "", fmt.Errorf(" This time doesn't make sense! You need to choose a time in the future I do not have a time machine. ")
+			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the past! I do not have a time machine")
 		}
 		session["timereq"] = stTime
 	}
@@ -477,10 +473,10 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		details := getDetails(session)
 		session["requestComplete"] = true
 		delete(session, "requestOrCreate")
-		return "Your request is complete! Here are the details: " + details + " You can now view the most suitable carpools, view all carpools, cancel your request, edit your request or choose one of the available carpools. So, what do you want to do?", nil
+		return "Your request is complete! Here are the details: " + details + " You can now view all carpools, cancel your request, edit your request or choose one of the available carpools. So, what do you want to do?", nil
 	}
 
-	return "looks like you have a carpool already you can edit it if you want", nil
+	return "Looks like you have a carpool already. You can edit it if you want.", nil
 }
 
 func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
@@ -503,7 +499,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		if len(allRequests) < 2 {
 			writeJSON(res, JSON{
-				"message": "ops no current carpool offers available looks like you will be walking :P",
+				"message": "Oops no current carpool offers available looks like you'll be walking. :P",
 			})
 			return
 		}
@@ -519,7 +515,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if !requestExists {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "You can't edit a request if you don't have one.I am starting to doubt your inteligence",
+				"message": "You can't edit a request if you don't have one. I am starting to doubt your inteligence.",
 			})
 			return
 		}
@@ -554,7 +550,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			if len(carpoolRequests) == 0 {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
-					"message": "no post exist with this ID ",
+					"message": "No posts exist with this ID. It must have been deleted!",
 				})
 				return
 			}
@@ -587,7 +583,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 				})
 				return
 			}
-			passengerRequests, err := DB.GetPassengerRequestByGUCID(gucID)
+			passengerRequests, err := DB.GetPassengerRequestsByGUCID(gucID)
 			if err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
@@ -626,7 +622,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if myChoiceExists {
 			res.WriteHeader(http.StatusForbidden)
 			writeJSON(res, JSON{
-				"message": "You already chose a carpool. Please cancel before choosing a new one.you can have only one carpool running at a time",
+				"message": "You already chose a carpool. Please cancel before choosing a new one. You can only be in one carpool at a time.",
 			})
 			return
 		}
@@ -651,7 +647,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		if len(carpoolRequests) < 1 {
 			writeJSON(res, JSON{
-				"message": "not a valid post ID. I will say it was a typo!",
+				"message": "not a valid post ID. I will say it was a typo! Try again like this 'choose ID' but replace ID with the post number!",
 			})
 			return
 		}
@@ -668,7 +664,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if strings.EqualFold(carpoolRequest.GUCID, session["gucID"].(string)) {
 			res.WriteHeader(http.StatusForbidden)
 			writeJSON(res, JSON{
-				"message": "You can't join your own carpool!",
+				"message": "You can't join your own carpool! I mean ... why would you even do that?",
 			})
 			return
 		}
@@ -694,7 +690,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		session["myChoice"] = postIDint
 		writeJSON(res, JSON{
-			"message": "You've successfully chosen a carpool! Now you have to wait for the original poster to accept your request.ps He may not ",
+			"message": "You've successfully chosen a carpool! Now you have to wait for the original poster to accept your request. He may cancel the carpool, or choose to accept others, so plesae stay alert to your notifications. You can view them by typing 'notify' or 'notifications'.",
 		})
 		return
 	} else if strings.Contains(comparable, "delete") && strings.Contains(comparable, "carpool") {
@@ -706,17 +702,10 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		delete(session, "createComplete")
 		delete(session, "requestOrCreate")
 		delete(session, "postID")
-		if !createFound {
+		if !createFound || !postIDExists {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "You cannot delete a carpool if you've never created one.",
-			})
-			return
-		}
-		if !postIDExists {
-			res.WriteHeader(http.StatusUnauthorized)
-			writeJSON(res, JSON{
-				"message": "You can't view delete a passengers a carpool because you didn't make one yet.",
+				"message": "You cannot delete a carpool if you've never created one. I can pretend that I deleted one that doesn't exist though!",
 			})
 			return
 		}
@@ -724,15 +713,14 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
-				"message": "There was an error deleting the carpool from our database." + err.Error(),
+				"message": "There was an error deleting the carpool from our database. Error: " + err.Error(),
 			})
 			return
 		}
 		writeJSON(res, JSON{
-			"message": "You chose to delete your carpool. Now you can create or request a carpool.",
+			"message": "You chose to delete your carpool. Now you can create a new one in its place if you wish. You can also request ne or view all the available ones.",
 		})
 		return
-
 	} else if strings.Contains(comparable, "edit") && strings.Contains(comparable, "carpool") {
 		delete(session, "postID")
 		delete(session, "fromGUC")
@@ -750,7 +738,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if !postIDExists {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "You can't view your carpool because you didn't make one yet.",
+				"message": "You can't view your carpool because you didn't make one yet. Go make one if you really want to do that. Just type something like 'create'.",
 			})
 			return
 		}
@@ -770,21 +758,14 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			return
 		}
 		writeJSON(res, JSON{
-			"message": "Here is your carpool details!</br>" + myRequest[0].CarpoolToString(),
+			"message": "Here are your carpool details!</br>" + myRequest[0].CarpoolToString(),
 		})
 		return
 	} else if strings.Contains(comparable, "reject") {
-		if !postIDExists {
+		if !postIDExists || !createFound {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "You can't view reject passengers from your carpool because you didn't make one yet.",
-			})
-			return
-		}
-		if !createFound {
-			res.WriteHeader(http.StatusUnauthorized)
-			writeJSON(res, JSON{
-				"message": "You cannot reject a passenger from your carpool if you haven't made one.",
+				"message": "You can't reject passengers from your carpool because you didn't make one yet. What are you even rejecting them for?",
 			})
 			return
 		}
@@ -794,19 +775,19 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusUnprocessableEntity)
 			writeJSON(res, JSON{
-				"message": "There was an error in rejection this passenger. Error: " + err.Error(),
+				"message": "There was an error in rejecting this passenger. Error: " + err.Error(),
 			})
 			return
 		}
 		writeJSON(res, JSON{
-			"message": "You successfully rejected the passenger.",
+			"message": "You successfully rejected the passenger with ID " + passengerID + ". What else would you like to do?",
 		})
 		return
 	} else if strings.Contains(comparable, "accept") {
-		if !createFound {
+		if !createFound || !postIDExists {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "You cannot accept a passenger to your carpool if you haven't made one.",
+				"message": "You cannot accept a passenger to your carpool if you haven't made one. That's just weird!",
 			})
 			return
 		}
@@ -816,16 +797,16 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if err != nil {
 			res.WriteHeader(http.StatusUnprocessableEntity)
 			writeJSON(res, JSON{
-				"message": "There was an error in acception this passenger. Error: " + err.Error(),
+				"message": "There was an error in accepting this passenger. Error: " + err.Error(),
 			})
 			return
 		}
 		writeJSON(res, JSON{
-			"message": "You successfully accepted the passenger.",
+			"message": "You successfully accepted the passenger with ID " + passengerID + ". What else would you like to do?",
 		})
 		return
 	} else if strings.Contains(comparable, "directions") {
-		if !createFound {
+		if !createFound || !postIDExists {
 			res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "I can't give you the directions because you don't have a carpool created.",
@@ -870,7 +851,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 func getNotifications(session Session) (string, error) {
 	//should be called only whesession Sessionn gucid is set
 	notificationString := ""
-	passengerRequests, err := DB.GetPassengerRequestByGUCID(session["gucID"].(string))
+	passengerRequests, err := DB.GetPassengerRequestsByGUCID(session["gucID"].(string))
 	if err != nil {
 
 		return "", fmt.Errorf("error")

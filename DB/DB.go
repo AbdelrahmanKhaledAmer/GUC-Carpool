@@ -178,8 +178,8 @@ func QueryAllPassengerRequests() ([]PassengerRequest, error) { //TODO should be 
 	return results, nil
 }
 
-// GetPassengerRequestByGUCID : return 1 passenger matching specific ID
-func GetPassengerRequestByGUCID(GUCID string) ([]PassengerRequest, error) {
+// GetPassengerRequestByGUCID : return all passengers matching specific ID
+func GetPassengerRequestsByGUCID(GUCID string) ([]PassengerRequest, error) {
 	session, err := initDBSession()
 	if err != nil {
 		return nil, err
@@ -209,6 +209,23 @@ func GetPassengerRequestsByPostID(postID uint64) ([]PassengerRequest, error) {
 		return nil, err
 	}
 	fmt.Println(results)
+	defer session.Close()
+	return results, nil
+}
+
+// GetPassengerRequestByGUCIDAndPostID : return all passengers matching specific ID
+func GetPassengerRequestByGUCIDAndPostID(GUCID string, postID uint64) ([]PassengerRequest, error) {
+	session, err := initDBSession()
+	if err != nil {
+		return nil, err
+	}
+
+	c := session.DB("carpool").C("PassengerRequest")
+	var results []PassengerRequest
+	err = c.Find(bson.M{"passenger.gucid": GUCID, "postid": postID}).All(&results) //c.Find(bson.M{"name": "Ahmed"}).All(&results) for filtering
+	if err != nil {
+		return nil, err
+	}
 	defer session.Close()
 	return results, nil
 }
@@ -287,7 +304,7 @@ func RejectPassenger(GUCID string, PostID uint64) error {
 		return err
 	}
 
-	passengerRequests, err := GetPassengerRequestByGUCID(GUCID)
+	passengerRequests, err := GetPassengerRequestByGUCIDAndPostID(GUCID, PostID)
 	if err != nil {
 		return err
 	}
@@ -322,7 +339,7 @@ func AcceptPassenger(GUCID string, PostID uint64) error {
 	currentpassengers := posts[0].CurrentPassengers
 	availableseats := posts[0].AvailableSeats
 
-	passengers, err := GetPassengerRequestByGUCID(GUCID)
+	passengers, err := GetPassengerRequestByGUCIDAndPostID(GUCID, PostID)
 	if err != nil {
 		return err
 	}
