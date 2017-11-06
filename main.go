@@ -554,7 +554,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			if len(carpoolRequests) == 0 {
 				res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
-					"message": "no post exist with this ID " + err.Error(),
+					"message": "no post exist with this ID ",
 				})
 				return
 			}
@@ -602,14 +602,19 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 				})
 				return
 			}
-			passengerRequest := passengerRequests[0]
-			err = DB.UpdatePassengerRequest(passengerRequest.Passenger.GUCID, passengerRequest.Passenger.Name, passengerRequest.PostID, 3)
-			if err != nil {
-				res.WriteHeader(http.StatusInternalServerError)
-				writeJSON(res, JSON{
-					"message": "I can't update your information in our database. Error: " + err.Error(),
-				})
-				return
+			for index := 0; index < len(passengerRequests); index++ {
+
+				passengerRequest := passengerRequests[index]
+				if passengerRequest.PostID == previousChoice.(uint64) {
+					err = DB.UpdatePassengerRequest(passengerRequest.Passenger.GUCID, passengerRequest.Passenger.Name, passengerRequest.PostID, 3)
+					if err != nil {
+						res.WriteHeader(http.StatusInternalServerError)
+						writeJSON(res, JSON{
+							"message": "I can't update your information in our database. Error: " + err.Error(),
+						})
+						return
+					}
+				}
 			}
 		}
 		writeJSON(res, JSON{
@@ -869,18 +874,13 @@ func getNotifications(session Session) (string, error) {
 
 		return "", fmt.Errorf("error")
 	}
-	if len(passengerRequests) > 0 {
-		passengerRequest := passengerRequests[0]
+	for index := 0; index < len(passengerRequests); index++ {
+		passengerRequest := passengerRequests[index]
 		if passengerRequest.Notify == 0 { //Rejected
 			notificationString += "-I'm sorry, but your last carpool request couldn't be made.You can joining another one.-"
 			// remove from session with this guc mail and DB
-			delete(session, "fromGUCreq")
-			delete(session, "latitudereq")
-			delete(session, "longitudereq")
-			delete(session, "timereq")
-			delete(session, "requestComplete")
-			delete(session, "requestOrCreate")
-			err = DB.DeletePassengerRequest(session["myChoice"].(uint64), session["gucID"].(string))
+
+			err = DB.DeletePassengerRequest(passengerRequest.PostID, session["gucID"].(string))
 			if err != nil {
 				return "", fmt.Errorf("error")
 			}
@@ -888,10 +888,8 @@ func getNotifications(session Session) (string, error) {
 
 		} else if passengerRequest.Notify == 2 { //Accepted
 			notificationString += "-Your request has been accepted! have fun-"
-
 		}
 	}
-
 	postID, postIDExists := session["postID"]
 	if postIDExists == true {
 		passengerRequests, err = DB.GetPassengerRequestsByPostID(postID.(uint64))
@@ -899,16 +897,12 @@ func getNotifications(session Session) (string, error) {
 
 			return "", fmt.Errorf("error")
 		}
-		fmt.Println(session["postID"])
-		fmt.Println(len(passengerRequests))
-		if len(passengerRequests) > 0 {
-			for i := 0; i < len(passengerRequests); i++ {
-				currentPassenger := passengerRequests[i]
-				if currentPassenger.Notify == 3 {
-					notificationString += "-The passenger with ID " + currentPassenger.Passenger.GUCID + " and name " + currentPassenger.Passenger.Name + " has cancelled his request. You can accept another one in their place.-"
-					//remove him from db
-					DB.DeletePassengerRequest(postID.(uint64), currentPassenger.Passenger.GUCID)
-				}
+		for i := 0; i < len(passengerRequests); i++ {
+			currentPassenger := passengerRequests[i]
+			if currentPassenger.Notify == 3 {
+				notificationString += "-The passenger with ID " + currentPassenger.Passenger.GUCID + " and name " + currentPassenger.Passenger.Name + " has cancelled his request. You can accept another one in their place.-"
+				//remove him from db
+				DB.DeletePassengerRequest(postID.(uint64), currentPassenger.Passenger.GUCID)
 			}
 		}
 

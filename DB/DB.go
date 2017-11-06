@@ -112,9 +112,16 @@ func DeleteDB(PostID uint64) error {
 	if err != nil {
 		return err
 	}
-
 	c := session.DB("carpool").C("CarpoolRequest")
 
+	PassengerRequests, err := GetPassengerRequestsByPostID(PostID)
+	if err != nil {
+		return err
+	}
+	for index := 0; index < len(PassengerRequests); index++ {
+		req := PassengerRequests[index]
+		UpdatePassengerRequest(req.Passenger.GUCID, req.Passenger.Name, PostID, 0) //rejected
+	}
 	err = c.Remove(bson.M{"_id": PostID})
 	if err != nil {
 		fmt.Printf("remove fail %v\n", err)
