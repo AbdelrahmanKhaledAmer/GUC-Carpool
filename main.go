@@ -228,7 +228,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 			}
 			for i := 0; i < len(passengerRequests); i++ {
 				currentPassenger := passengerRequests[i]
-				if strings.EqualFold(currentPassenger.Passenger.GUCID, gucID) {
+				if strings.EqualFold(currentPassenger.Passenger.GUCID, gucID) && currentPassenger.Notify != 0 && currentPassenger.Notify != 3 {
 					session["myChoice"] = currentPassenger.PostID
 				}
 			}
