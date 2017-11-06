@@ -230,7 +230,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 			}
 		}
 
-		responseMessage := "Hello " + name + ". You can view all available carpools by typing 'view all', or 'view carpool' to view one you already have, cancel your request by typing 'cancel request', edit your request by typing 'edit request' or choose an available carpool by typing 'choose ID' where ID is the postID of the carpool of your choice. You can also choose to offer other people a ride by creating a carpool by typing 'create', or specify the details of a carpool you wish to request by typing 'request'."
+		responseMessage := "Hello " + name + ". You can view all available carpools by typing 'view all', or 'view carpool' to view one you already have, cancel your request by typing 'cancel request', edit your request by typing 'edit request' or choose an available carpool by typing 'choose ID' where ID is the postID of the carpool of your choice. You can also choose to offer other people a ride by creating a carpool by typing 'create', or specify the details of a carpool you wish to request by typing 'request'. or view notifications for  your carpool or request by typing notify"
 		// responseNotify, err := getNotifications(session)
 		// if err != nil {
 		// 	responseNotify = "can not retrive your notifications right now  "
