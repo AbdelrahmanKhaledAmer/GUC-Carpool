@@ -113,7 +113,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 	// Make sure the user has a session.
 	uuid := req.Header.Get("Authorization")
 	if uuid == "" {
-		res.WriteHeader(http.StatusUnauthorized)
+		//res.WriteHeader(http.StatusUnauthorized)
 		writeJSON(res, JSON{
 			"message": "I'm sorry, but it seems that I forgot who yo are in. Please log in and try again.",
 		})
@@ -123,7 +123,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 	// Make sure the user's session is active.
 	session, sessionFound := sessions[uuid]
 	if !sessionFound {
-		res.WriteHeader(http.StatusUnauthorized)
+		//res.WriteHeader(http.StatusUnauthorized)
 		writeJSON(res, JSON{
 			"message": "I'm sorry, but your session has expired. Please log in and try again.",
 		})
@@ -134,7 +134,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 	data := JSON{}
 	err := json.NewDecoder(req.Body).Decode(&data)
 	if err != nil {
-		res.WriteHeader(http.StatusBadRequest)
+		//res.WriteHeader(http.StatusBadRequest)
 		writeJSON(res, JSON{
 			"message": "I could not understand what you said because it wasn't written in a JSON format!",
 		})
@@ -145,7 +145,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 	// Make sure the data sent is in "message"
 	messageRecieved, received := data["message"]
 	if !received {
-		res.WriteHeader(http.StatusBadRequest)
+		//res.WriteHeader(http.StatusBadRequest)
 		writeJSON(res, JSON{
 			"message": "I did not receive a message. Are you sure you sent me something?",
 		})
@@ -158,7 +158,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		// Separate gucID and name
 		login := strings.Split(messageRecieved.(string), ":")
 		if len(login) < 2 {
-			res.WriteHeader(http.StatusUnauthorized)
+			//res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again.(ex. '12-3456:MyName') It is so easy you just write them :D",
 			})
@@ -168,7 +168,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		name := login[1]
 		// Check if gucID and name are empty
 		if gucID == "" || name == "" {
-			res.WriteHeader(http.StatusUnauthorized)
+			//res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again. I can not infer this Info but when I grow up I may. (ex. '12-3456:MyName')",
 			})
@@ -178,7 +178,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		exp := regexp.MustCompile(`[0-9]+-[0-9]+`)
 		match := exp.MatchString(gucID)
 		if !match {
-			res.WriteHeader(http.StatusUnauthorized)
+			//	res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "Your GUC ID is invalid. Are you sure you entered it correctly? type it correctly or I will keep anoying you with this message. (ex. '12-3456')",
 			})
@@ -204,7 +204,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 			carpoolRequests, err := DB.QueryAll()
 			passengerRequests, err2 := DB.QueryAllPassengerRequests()
 			if err != nil || err2 != nil {
-				res.WriteHeader(http.StatusInternalServerError)
+				//	res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
 					"message": "There was an error in getting your data from the database. Error: " + err.Error(),
 				})
@@ -267,7 +267,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 	// See if user wishes to request or create a carpool.
 	finalResponse, err := processMessage(session, data["message"].(string))
 	if err != nil {
-		res.WriteHeader(http.StatusUnprocessableEntity)
+		//res.WriteHeader(http.StatusUnprocessableEntity)
 		writeJSON(res, JSON{
 			"message": string(err.Error()),
 		})
@@ -487,7 +487,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 	if strings.Contains(comparable, "view all") {
 		allRequests, err := DB.QueryAll()
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
+			//res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
 				"message": "There was an error while retrieving the data from our database. Error: " + err.Error(),
 			})
@@ -513,7 +513,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		delete(session, "longitudereq")
 		delete(session, "timereq")
 		if !requestExists {
-			res.WriteHeader(http.StatusUnauthorized)
+			//res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "You can't edit a request if you don't have one. I am starting to doubt your inteligence.",
 			})
@@ -538,7 +538,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			gucID := session["gucID"].(string)
 			carpoolRequests, err := DB.GetPostByID(previousChoice.(uint64))
 			if err != nil {
-				res.WriteHeader(http.StatusInternalServerError)
+				//	res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
 					"message": "There was an error while retrieving the data from our database. Error: " + err.Error(),
 				})
@@ -548,7 +548,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 
 			wasCurrent := false
 			if len(carpoolRequests) == 0 {
-				res.WriteHeader(http.StatusInternalServerError)
+				//	res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
 					"message": "No posts exist with this ID. It must have been deleted!",
 				})
@@ -577,7 +577,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			}
 			err = DB.UpdateDB(previousChoice.(uint64), carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, availableSeats, currentPassengers, possiblePassengers, carpoolRequest.StartTime)
 			if err != nil {
-				res.WriteHeader(http.StatusInternalServerError)
+				//	res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
 					"message": "There was an error removing you from the carpool. Error: " + err.Error(),
 				})
@@ -585,14 +585,14 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			}
 			passengerRequests, err := DB.GetPassengerRequestsByGUCID(gucID)
 			if err != nil {
-				res.WriteHeader(http.StatusInternalServerError)
+				//	res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
 					"message": "There was an error while retrieving the data from our database. Error: " + err.Error(),
 				})
 				return
 			}
 			if len(passengerRequests) == 0 {
-				res.WriteHeader(http.StatusUnauthorized)
+				//res.WriteHeader(http.StatusUnauthorized)
 				writeJSON(res, JSON{
 					"message": "I can't find your carpool request. Please try again in a moment",
 				})
@@ -604,7 +604,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 				if passengerRequest.PostID == previousChoice.(uint64) {
 					err = DB.UpdatePassengerRequest(passengerRequest.Passenger.GUCID, passengerRequest.Passenger.Name, passengerRequest.PostID, 3)
 					if err != nil {
-						res.WriteHeader(http.StatusInternalServerError)
+						//	res.WriteHeader(http.StatusInternalServerError)
 						writeJSON(res, JSON{
 							"message": "I can't update your information in our database. Error: " + err.Error(),
 						})
@@ -620,7 +620,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 	} else if strings.Contains(comparable, "choose") {
 		_, myChoiceExists := session["myChoice"]
 		if myChoiceExists {
-			res.WriteHeader(http.StatusForbidden)
+			//	res.WriteHeader(http.StatusForbidden)
 			writeJSON(res, JSON{
 				"message": "You already chose a carpool. Please cancel before choosing a new one. You can only be in one carpool at a time.",
 			})
@@ -630,7 +630,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		postID := exp.FindString(comparable)
 		postIDint, err := strconv.ParseUint(postID, 10, 64)
 		if err != nil {
-			res.WriteHeader(http.StatusUnprocessableEntity)
+			//	res.WriteHeader(http.StatusUnprocessableEntity)
 			writeJSON(res, JSON{
 				"message": "There was an error when converting the postID from string to int. Please try again.",
 			})
@@ -639,7 +639,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 
 		carpoolRequests, err := DB.GetPostByID(postIDint)
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
+			//	res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
 				"message": "There was an error while retrieving the data from our database. Error: " + err.Error(),
 			})
@@ -653,7 +653,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		myDetails, err := DB.NewPassengerRequest(session["gucID"].(string), session["name"].(string), postIDint, 1)
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
+			//	res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
 				"message": "There was an error while creating your information. Error: " + err.Error(),
 			})
@@ -662,7 +662,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 
 		carpoolRequest := carpoolRequests[0]
 		if strings.EqualFold(carpoolRequest.GUCID, session["gucID"].(string)) {
-			res.WriteHeader(http.StatusForbidden)
+			//	res.WriteHeader(http.StatusForbidden)
 			writeJSON(res, JSON{
 				"message": "You can't join your own carpool! I mean ... why would you even do that?",
 			})
@@ -671,7 +671,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		//insert after check
 		err = DB.InsertPassengerRequest(&myDetails)
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
+			//	res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
 				"message": "There was an error while saving your information. Error: " + err.Error(),
 			})
@@ -682,7 +682,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		possiblePassengers = append(possiblePassengers, session["gucID"].(string))
 		err = DB.UpdateDB(postIDint, carpoolRequest.Longitude, carpoolRequest.Latitude, carpoolRequest.FromGUC, carpoolRequest.AvailableSeats, carpoolRequest.CurrentPassengers, possiblePassengers, carpoolRequest.StartTime)
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
+			//res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
 				"message": "There was an error updating. Error: " + err.Error(),
 			})
@@ -703,7 +703,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		delete(session, "requestOrCreate")
 		delete(session, "postID")
 		if !createFound || !postIDExists {
-			res.WriteHeader(http.StatusUnauthorized)
+			//	res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "You cannot delete a carpool if you've never created one. I can pretend that I deleted one that doesn't exist though!",
 			})
@@ -711,7 +711,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		err := DB.DeleteDB(postID.(uint64))
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
+			//	res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
 				"message": "There was an error deleting the carpool from our database. Error: " + err.Error(),
 			})
@@ -736,7 +736,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		return
 	} else if strings.Contains(comparable, "view") && strings.Contains(comparable, "carpool") {
 		if !postIDExists {
-			res.WriteHeader(http.StatusUnauthorized)
+			//	res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "You can't view your carpool because you didn't make one yet. Go make one if you really want to do that. Just type something like 'create'.",
 			})
@@ -744,14 +744,14 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		myRequest, err := DB.GetPostByID(postID.(uint64))
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
+			//	res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
 				"message": "Could not get the carpool request. Error: " + err.Error(),
 			})
 			return
 		}
 		if len(myRequest) == 0 {
-			res.WriteHeader(http.StatusNotFound)
+			//	res.WriteHeader(http.StatusNotFound)
 			writeJSON(res, JSON{
 				"message": "There seem to be no requests in our databse matching yours.",
 			})
@@ -763,7 +763,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		return
 	} else if strings.Contains(comparable, "reject") {
 		if !postIDExists || !createFound {
-			res.WriteHeader(http.StatusUnauthorized)
+			//	res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "You can't reject passengers from your carpool because you didn't make one yet. What are you even rejecting them for?",
 			})
@@ -773,7 +773,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		passengerID := exp.FindString(comparable)
 		err := DB.RejectPassenger(passengerID, postID.(uint64))
 		if err != nil {
-			res.WriteHeader(http.StatusUnprocessableEntity)
+			//	res.WriteHeader(http.StatusUnprocessableEntity)
 			writeJSON(res, JSON{
 				"message": "There was an error in rejecting this passenger. Error: " + err.Error(),
 			})
@@ -785,7 +785,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		return
 	} else if strings.Contains(comparable, "accept") {
 		if !createFound || !postIDExists {
-			res.WriteHeader(http.StatusUnauthorized)
+			//	res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "You cannot accept a passenger to your carpool if you haven't made one. That's just weird!",
 			})
@@ -795,7 +795,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		passengerID := exp.FindString(comparable)
 		err := DB.AcceptPassenger(passengerID, postID.(uint64))
 		if err != nil {
-			res.WriteHeader(http.StatusUnprocessableEntity)
+			//	res.WriteHeader(http.StatusUnprocessableEntity)
 			writeJSON(res, JSON{
 				"message": "There was an error in accepting this passenger. Error: " + err.Error(),
 			})
@@ -807,7 +807,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		return
 	} else if strings.Contains(comparable, "directions") {
 		if !createFound || !postIDExists {
-			res.WriteHeader(http.StatusUnauthorized)
+			//res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
 				"message": "I can't give you the directions because you don't have a carpool created.",
 			})
@@ -816,7 +816,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		if session["fromGUC"].(bool) {
 			directions, err := DirectionsAPI.GetRoute("German University IN cairo", strconv.FormatFloat(session["latitude"].(float64), 'f', -1, 64)+","+strconv.FormatFloat(session["longitude"].(float64), 'f', -1, 64))
 			if err != nil {
-				res.WriteHeader(http.StatusInternalServerError)
+				//	res.WriteHeader(http.StatusInternalServerError)
 				writeJSON(res, JSON{
 					"message": "An error occured while recieving the directions. Error: " + err.Error(),
 				})
@@ -829,7 +829,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		directions, err := DirectionsAPI.GetRoute(strconv.FormatFloat(session["latitude"].(float64), 'f', -1, 64)+","+strconv.FormatFloat(session["longitude"].(float64), 'f', -1, 64), "German University IN cairo")
 		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
+			//	res.WriteHeader(http.StatusInternalServerError)
 			writeJSON(res, JSON{
 				"message": "An error occured while recieving the directions. the location you entered can not be found",
 			})
@@ -840,7 +840,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		})
 		return
 	}
-	res.WriteHeader(http.StatusUnprocessableEntity)
+	//res.WriteHeader(http.StatusUnprocessableEntity)
 	writeJSON(res, JSON{
 		"message": "I did not understand what you said. Would you like to view all the available carpools,  cancel your request, edit your request or choose an available carpool?",
 	})
