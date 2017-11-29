@@ -95,7 +95,7 @@ func startSession(res http.ResponseWriter, req *http.Request) {
 	sessions[uuid] = Session{}
 	writeJSON(res, JSON{
 		"uuid":    uuid,
-		"message": "Welcome to GUC Carpool! Please tell me your GUC-ID and name separated by ':'. :smile:",
+		"message": "Welcome to GUC Carpool! Please tell me your GUC-ID and name separated by ':'.",
 	})
 }
 
