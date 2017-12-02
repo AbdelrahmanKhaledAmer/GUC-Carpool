@@ -495,7 +495,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 		}
 		cpString := ""
 		for i := 1; i < len(allRequests); i++ {
-			cpString += allRequests[i].CarpoolToString() + ",</br>"
+			cpString += allRequests[i].CarpoolToString() + ",\n"
 		}
 		if len(allRequests) < 2 {
 			writeJSON(res, JSON{
@@ -504,7 +504,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			return
 		}
 		writeJSON(res, JSON{
-			"message": "Here are all the available carpools!</br>" + cpString,
+			"message": "Here are all the available carpools!\n" + cpString,
 		})
 		return
 	} else if strings.Contains(comparable, "edit") && strings.Contains(comparable, "request") {
@@ -758,7 +758,7 @@ func postRequestHandler(res http.ResponseWriter, session Session, data JSON) {
 			return
 		}
 		writeJSON(res, JSON{
-			"message": "Here are your carpool details!</br>" + myRequest[0].CarpoolToString(),
+			"message": "Here are your carpool details!\n" + myRequest[0].CarpoolToString(),
 		})
 		return
 	} else if strings.Contains(comparable, "reject") {

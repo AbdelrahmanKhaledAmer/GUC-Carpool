@@ -22,29 +22,33 @@ type CarpoolRequest struct {
 
 // CarpoolToString : Take a Carpool Request as a subject and returns a string describing it.
 func (c *CarpoolRequest) CarpoolToString() string {
-	str := "{</br>&emsp;PostID: " + strconv.FormatUint(c.PostID, 10)
-	str += ",</br>&emsp;Name: " + c.Name
-	str += ",</br>&emsp;GUCID: " + c.GUCID
-	str += ",</br>&emsp;FromGUC: " + strconv.FormatBool(c.FromGUC)
-	str += ",</br>&emsp;Latitude: " + strconv.FormatFloat(c.Latitude, 'f', -1, 64)
-	str += ",</br>&emsp;Longitude: " + strconv.FormatFloat(c.Longitude, 'f', -1, 64)
-	str += ",</br>&emsp;Start Time: " + c.StartTime.Format("Jan 2, 2006 at 3:04pm (EET)")
-	str += ",</br>&emsp;Available Seats: " + strconv.FormatInt(int64(c.AvailableSeats), 10)
-	str += ",</br>&emsp;Current Passengers: [ "
+	str := "->\n\tPostID: " + strconv.FormatUint(c.PostID, 10)
+	str += ",\tDriver Name: " + c.Name
+	//str += ",\n\tGUCID: " + c.GUCID
+	if c.FromGUC {
+		str += "\n\tLeaving the GUC"
+	} else {
+		str += "\n\tGoing to the GUC"
+	}
+	str += ",\n\tLatitude: " + strconv.FormatFloat(c.Latitude, 'f', -1, 64)
+	str += ",\tLongitude: " + strconv.FormatFloat(c.Longitude, 'f', -1, 64)
+	str += ",\n\tStart Time: " + c.StartTime.Format("Jan 2, 2006 at 3:04pm (EET)")
+	str += ",\n\tAvailable Seats: " + strconv.FormatInt(int64(c.AvailableSeats), 10)
+	str += ",\n\tCurrent Passengers: ("
 	for i := 0; i < len(c.CurrentPassengers); i++ {
 		str += c.CurrentPassengers[i]
 		if i != (len(c.CurrentPassengers) - 1) {
 			str += ", "
 		}
 	}
-	str += " ],</br>&emsp;Possible Passengers: [ "
+	str += "),\n\tPossible Passengers: ("
 	for i := 0; i < len(c.PossiblePassengers); i++ {
 		str += c.PossiblePassengers[i]
 		if i != (len(c.PossiblePassengers) - 1) {
 			str += ", "
 		}
 	}
-	str += " ]</br>}"
+	str += " )\n\n"
 	return str
 }
 
