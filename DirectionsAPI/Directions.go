@@ -29,7 +29,7 @@ func GetRoute(from string, to string) (string, error) {
 	for i1 := 0; i1 < len(route); i1++ {
 		for i2 := 0; i2 < len(route[i1].Legs); i2++ {
 			for i3 := 0; i3 < len(route[i1].Legs[i2].Steps); i3++ {
-				routeInstructions += strip.StripTags(route[i1].Legs[i2].Steps[i3].HTMLInstructions) + "</br>"
+				routeInstructions += strip.StripTags(route[i1].Legs[i2].Steps[i3].HTMLInstructions) + "\n"
 			}
 		}
 	}
