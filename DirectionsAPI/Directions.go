@@ -13,7 +13,7 @@ import (
 func GetAddress(lat float64, lon float64) (string, error) {
 	geocoder.SetAPIKey("X3XD20Z6CoOItFBqhZHp8Moxo1st3YAz")
 	address, err := geocoder.ReverseGeocode(lat, lon)
-	if err != nil {
+	if err != nil || address == nil {
 		return "", err
 	}
 	return address.Street + " " + address.City, nil
