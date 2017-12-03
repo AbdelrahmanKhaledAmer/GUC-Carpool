@@ -340,7 +340,7 @@ func createCarpoolChat(session Session, message string) (string, error) {
 			exp := regexp.MustCompile(`[0-9]+[\.]?[0-9]*`)
 			session["latitude"], _ = strconv.ParseFloat(exp.FindAllString(comparable, -1)[0], 64)
 			session["longitude"], _ = strconv.ParseFloat(exp.FindAllString(comparable, -1)[1], 64)
-			address, err := DirectionsAPI.GetAddress(session["latitude"].(float64), session["latitude"].(float64))
+			address, err := DirectionsAPI.GetAddress(session["latitude"].(float64), session["longitude"].(float64))
 			if err != nil || address == "" {
 				return "You chose the location with the latitude " + strconv.FormatFloat(session["latitude"].(float64), 'f', -1, 64) + ", and the longitude " + strconv.FormatFloat(session["longitude"].(float64), 'f', -1, 64) + ". What time would you like to your ride to be?", nil
 			}
