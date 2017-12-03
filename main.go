@@ -95,7 +95,7 @@ func startSession(res http.ResponseWriter, req *http.Request) {
 	sessions[uuid] = Session{}
 	writeJSON(res, JSON{
 		"uuid":    uuid,
-		"message": "Welcome to GUC Carpool! Please tell me your GUC-ID and name separated by ':'.",
+		"message": "Welcome to GUC Carpool! Please tell me your GUC-ID and name",
 	})
 }
 
@@ -160,7 +160,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		if len(login) < 2 {
 			//res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again.(ex. '12-3456:MyName') It is so easy you just write them :D",
+				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session.  It is so easy you just write them :D",
 			})
 			return
 		}
@@ -170,7 +170,7 @@ func handleChat(res http.ResponseWriter, req *http.Request) {
 		if gucID == "" || name == "" {
 			//res.WriteHeader(http.StatusUnauthorized)
 			writeJSON(res, JSON{
-				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again. I can not infer this Info but when I grow up I may. (ex. '12-3456:MyName')",
+				"message": "Something went wrong. You have to give me both your name and your GUC-ID in order to successfully start your session. Please try again. I can not infer this Info but when I grow up I may.",
 			})
 			return
 		}
@@ -323,10 +323,10 @@ func createCarpoolChat(session Session, message string) (string, error) {
 	if !fromGUCFound {
 		if strings.Contains(comparable, "to guc") || strings.Contains(comparable, "to the guc") || strings.Contains(comparable, "going") {
 			session["fromGUC"] = false
-			return "You've chosen to create a carpool that's going to the GUC. Where can you pick up people? please enter your latitude and longitude", nil
+			return "You've chosen to create a carpool that's going to the GUC. Where can you pick up people?  Please tell me your desired location", nil
 		} else if strings.Contains(comparable, "from guc") || strings.Contains(comparable, "from the guc") || strings.Contains(comparable, "leaving") {
 			session["fromGUC"] = true
-			return "You've chosen to create a carpool that's leaving the GUC. Where are you going? please enter your latitude and longitude", nil
+			return "You've chosen to create a carpool that's leaving the GUC. Where are you going? Please tell me your desired location", nil
 		} else {
 			return "I'm sorry you didn't answer my question. Are you going to the GUC or leaving the GUC? (ex. if you're leaving you can type 'from guc' or if you're going to campus you can type 'to guc'.", nil
 		}
@@ -352,7 +352,7 @@ func createCarpoolChat(session Session, message string) (string, error) {
 		} else {
 			response = "Where can you pick up people?"
 		}
-		return "", fmt.Errorf("I'm sorry, but you didn't answer my question! " + response + " Please enter the latitude and longitude like this 'latitude 30.08 longitude 31.33'")
+		return "", fmt.Errorf("I'm sorry, but you didn't answer my question! " + response + " Please tell me your desired location")
 	}
 
 	//take his start time
@@ -361,7 +361,7 @@ func createCarpoolChat(session Session, message string) (string, error) {
 	if !timeFound && fromGUCFound && latitudeFound && longitudeFound {
 		stTime, err := now.Parse(message)
 		if err != nil {
-			return "", fmt.Errorf("This is not a valid time format. Can you please tell me again when you want your ride to be? One possible format you can use is 'yyyy-mm-dd hh:mm'")
+			return "", fmt.Errorf("This is not a valid time format. Can you please tell me again when you want your ride to be? ")
 		}
 		if requestTimeFound {
 			duration := stTime.Sub(requestTime.(time.Time))
@@ -427,10 +427,10 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 	if !fromGUCFound {
 		if strings.Contains(comparable, "going to") || strings.Contains(comparable, "to guc") {
 			session["fromGUCreq"] = false
-			return "You've chosen to find a carpool going to the GUC! Where would you like to be picked up from? Please eneter a latitude and longitude.", nil
+			return "You've chosen to find a carpool going to the GUC! Where would you like to be picked up from? Please tell me your desired location.", nil
 		} else if strings.Contains(comparable, "leaving") || strings.Contains(comparable, "from guc") {
 			session["fromGUCreq"] = true
-			return "You chose to leave the campus. Where would you like to go? Please enter a latitude and longitude.", nil
+			return "You chose to leave the campus. Where would you like to go? Please tell me your desired location", nil
 		} else {
 			return "I'm sorry you didn't answer my question. Are you going to the GUC or leaving the GUC? (ex. if you're leaving you can type 'from guc' or if you're going to campus you can type 'to guc'.", nil
 		}
