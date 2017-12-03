@@ -41,18 +41,27 @@ func (c *CarpoolRequest) CarpoolToString() string {
 	}
 	str += ",\n\tStart Time: " + c.StartTime.Format("Jan 2, 2006 at 3:04pm (EET)")
 	str += ",\n\tAvailable Seats: " + strconv.FormatInt(int64(c.AvailableSeats), 10)
-	str += ",\n\tCurrent Passengers: ("
-	for i := 0; i < len(c.CurrentPassengers); i++ {
-		str += c.CurrentPassengers[i]
-		if i != (len(c.CurrentPassengers) - 1) {
-			str += ", "
+	if len(c.CurrentPassengers) == 0 {
+		str += ",\n\tNo Current Passengers"
+	} else {
+		str += ",\n\tCurrent Passengers: ("
+		for i := 0; i < len(c.CurrentPassengers); i++ {
+			str += c.CurrentPassengers[i]
+			if i != (len(c.CurrentPassengers) - 1) {
+				str += ", "
+			}
 		}
 	}
-	str += "),\n\tPossible Passengers: ("
-	for i := 0; i < len(c.PossiblePassengers); i++ {
-		str += c.PossiblePassengers[i]
-		if i != (len(c.PossiblePassengers) - 1) {
-			str += ", "
+
+	if len(c.PossiblePassengers) == 0 {
+		str += ",\n\tNo requesting Passengers"
+	} else {
+		str += "),\n\requesting Passengers: ("
+		for i := 0; i < len(c.PossiblePassengers); i++ {
+			str += c.PossiblePassengers[i]
+			if i != (len(c.PossiblePassengers) - 1) {
+				str += ", "
+			}
 		}
 	}
 	str += " )\n\n"
