@@ -340,7 +340,11 @@ func createCarpoolChat(session Session, message string) (string, error) {
 			exp := regexp.MustCompile(`[0-9]+[\.]?[0-9]*`)
 			session["latitude"], _ = strconv.ParseFloat(exp.FindAllString(comparable, -1)[0], 64)
 			session["longitude"], _ = strconv.ParseFloat(exp.FindAllString(comparable, -1)[1], 64)
-			return "You chose the location with the latitude " + strconv.FormatFloat(session["latitude"].(float64), 'f', -1, 64) + ", and the longitude " + strconv.FormatFloat(session["longitude"].(float64), 'f', -1, 64) + ". What time would you like to your ride to be?", nil
+			address, err := DirectionsAPI.GetAddress(session["latitude"].(float64), session["latitude"].(float64))
+			if err != nil || address == "" {
+				return "You chose the location with the latitude " + strconv.FormatFloat(session["latitude"].(float64), 'f', -1, 64) + ", and the longitude " + strconv.FormatFloat(session["longitude"].(float64), 'f', -1, 64) + ". What time would you like to your ride to be?", nil
+			}
+			return "You chose the location with the address " + address + " . What time would you like to your ride to be?", nil
 		}
 		var response string
 		if FromGUC.(bool) {
@@ -441,7 +445,13 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 			exp := regexp.MustCompile(`[0-9]+[\.]?[0-9]*`)
 			session["latitudereq"] = exp.FindAllString(message, -1)[0]
 			session["longitudereq"] = exp.FindAllString(message, -1)[1]
-			return "You chose the location with the latitude " + session["latitudereq"].(string) + ", and the longitude " + session["longitudereq"].(string) + ". What time would you like to your ride to be?", nil
+			lat, _ := strconv.ParseFloat(session["latitudereq"].(string), 64)
+			lon, _ := strconv.ParseFloat(session["longitudereq"].(string), 64)
+			address, err := DirectionsAPI.GetAddress(lat, lon)
+			if err != nil || address == "" {
+				return "You chose the location with the latitude " + session["latitudereq"].(string) + ", and the longitude " + session["longitudereq"].(string) + ". What time would you like to your ride to be?", nil
+			}
+			return "You chose the location with the address " + address + " . What time would you like to your ride to be?", nil
 		}
 		var ret string
 		if fromGUC.(bool) {

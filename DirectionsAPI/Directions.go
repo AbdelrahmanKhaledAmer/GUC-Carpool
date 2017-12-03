@@ -5,8 +5,19 @@ import (
 	"log"
 
 	strip "github.com/grokify/html-strip-tags-go"
+	"github.com/jasonwinn/geocoder"
 	"googlemaps.github.io/maps"
 )
+
+//GetAddress : A function that returns the street address of a location given the latitude and longitude
+func GetAddress(lat float64, lon float64) (string, error) {
+	geocoder.SetAPIKey("X3XD20Z6CoOItFBqhZHp8Moxo1st3YAz")
+	address, err := geocoder.ReverseGeocode(lat, lon)
+	if err != nil {
+		return "", err
+	}
+	return address.Street + " " + address.City, nil
+}
 
 //GetRoute : return a string with the instructions to follow to reach the destination
 func GetRoute(from string, to string) (string, error) {

@@ -3,6 +3,8 @@ package DB
 import (
 	"strconv"
 	"time"
+
+	"github.com/AbdelrahmanKhaledAmer/GUC-Carpool/DirectionsAPI"
 )
 
 //CarpoolRequest : request made by students to,from guc
@@ -30,8 +32,13 @@ func (c *CarpoolRequest) CarpoolToString() string {
 	} else {
 		str += "\n\tGoing to the GUC"
 	}
-	str += ",\n\tLatitude: " + strconv.FormatFloat(c.Latitude, 'f', -1, 64)
-	str += ",\tLongitude: " + strconv.FormatFloat(c.Longitude, 'f', -1, 64)
+	address, err := DirectionsAPI.GetAddress(c.Latitude, c.Longitude)
+	if err != nil || address == "" {
+		str += ",\n\tLatitude: " + strconv.FormatFloat(c.Latitude, 'f', -1, 64)
+		str += ",\tLongitude: " + strconv.FormatFloat(c.Longitude, 'f', -1, 64)
+	} else {
+		str += "\n\tAddress: " + address
+	}
 	str += ",\n\tStart Time: " + c.StartTime.Format("Jan 2, 2006 at 3:04pm (EET)")
 	str += ",\n\tAvailable Seats: " + strconv.FormatInt(int64(c.AvailableSeats), 10)
 	str += ",\n\tCurrent Passengers: ("
