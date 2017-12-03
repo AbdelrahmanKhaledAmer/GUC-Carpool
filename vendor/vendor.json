@@ -15,6 +15,12 @@
 			"revisionTime": "2017-03-13T07:41:01Z"
 		},
 		{
+			"checksumSHA1": "e5qjmaHHTGyk1PQYgEeVVBGnSp0=",
+			"path": "github.com/jasonwinn/geocoder",
+			"revision": "9a863b98eafdbbc19f66e9b4760887ebdcb55c11",
+			"revisionTime": "2016-04-21T14:28:32Z"
+		},
+		{
 			"checksumSHA1": "FsX08FYGCGbiN81y42u/7dQ0a8I=",
 			"path": "github.com/jinzhu/now",
 			"revision": "d939ba741945c047cac69c329c5fb0d6b4a06520",
