@@ -50,21 +50,23 @@ func (c *CarpoolRequest) CarpoolToString() string {
 			if i != (len(c.CurrentPassengers) - 1) {
 				str += ", "
 			}
+			str += ")"
 		}
 	}
 
 	if len(c.PossiblePassengers) == 0 {
 		str += ",\n\tNo requesting Passengers"
 	} else {
-		str += "),\n\requesting Passengers: ("
+		str += ",\nrequesting Passengers: ("
 		for i := 0; i < len(c.PossiblePassengers); i++ {
 			str += c.PossiblePassengers[i]
 			if i != (len(c.PossiblePassengers) - 1) {
 				str += ", "
 			}
 		}
+		str += ")"
 	}
-	str += " )\n\n"
+	str += "\n\n"
 	return str
 }
 
