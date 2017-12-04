@@ -459,7 +459,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		} else {
 			ret = "Where would you like to be picked up from?"
 		}
-		return "", fmt.Errorf("I'm sorry, but you didn't answer my question! " + ret + " Please enter the latitude and longitude like this 'latitude 30.08 longitude 31.33'")
+		return "", fmt.Errorf("I'm sorry, but you didn't answer my question! " + ret + " Please tell me your desired location.")
 	}
 
 	// Get the time the user wants to leave.
