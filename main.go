@@ -479,7 +479,7 @@ func requestCarpoolChat(session Session, message string) (string, error) {
 		now := time.Now()
 		valid := stTime.After(now)
 		if !valid {
-			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the past! I do not have a time machine")
+			return "", fmt.Errorf("This time doesn't make sense! You need to choose a time in the future! I do not have a time machine")
 		}
 		session["timereq"] = stTime
 	}
